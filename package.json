@@ -29,6 +29,9 @@
   },
   "type": "module",
   "dependencies": {
+    "@types/lodash-es": "^4.17.6",
+    "lodash-es": "^4.17.21",
+    "svelte-dnd-action": "^0.9.15",
     "svelte2tsx": "^0.5.5"
   }
 }
