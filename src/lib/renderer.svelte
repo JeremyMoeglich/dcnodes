@@ -1,13 +1,18 @@
 <script lang="ts">
-	import type { SvelteComponentTyped } from 'svelte';
+	import { getContext, setContext, SvelteComponentTyped } from 'svelte';
 	import { omit } from 'lodash-es';
-	type items_type = Array<{
-		component: new (...args: unknown[]) => SvelteComponentTyped<Omit<items_type, 'component'>>;
+	type nodes_type = Array<{
+		component: new (...args: unknown[]) => SvelteComponentTyped<Omit<nodes_type, 'component'>>;
+		position: undefined | { x: number; y: number };
 		props: Record<string, unknown>;
 	}>;
-	export let items: items_type;
+	export let items: nodes_type;
+
+	const current_layer: number = getContext('sveltedc-current-layer') ?? 0;
+	setContext('svelte-current-layer', current_layer + 1);
+	
 </script>
 
 {#each items as item}
-	<svelte:component this={item.component} {...item.props} />
+	<svelte:component this={item.component} {...item.props} bind:items/>
 {/each}
