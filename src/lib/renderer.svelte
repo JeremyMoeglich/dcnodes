@@ -1,18 +1,32 @@
 <script lang="ts">
-	import { getContext, setContext, SvelteComponentTyped } from 'svelte';
-	import { omit } from 'lodash-es';
-	type nodes_type = Array<{
-		component: new (...args: unknown[]) => SvelteComponentTyped<Omit<nodes_type, 'component'>>;
-		position: undefined | { x: number; y: number };
-		props: Record<string, unknown>;
-	}>;
-	export let items: nodes_type;
+	import type { item_type } from './types/item';
 
-	const current_layer: number = getContext('sveltedc-current-layer') ?? 0;
-	setContext('svelte-current-layer', current_layer + 1);
-	
+	export let items: Array<item_type>;
+	$: items.map((item) => {
+		item.position = item.position ?? { x: 0, y: 0 };
+	});
 </script>
 
-{#each items as item}
-	<svelte:component this={item.component} {...item.props} bind:items/>
-{/each}
+<div class="main">
+	<div class="nodes">
+		{#each items as item}
+			<div class="item" style={`translate(${item.position?.x ?? 0}px, ${item.position?.y ?? 0}px)`}>
+				<svelte:component this={item.component} {...item.props} bind:item />
+			</div>
+		{/each}
+	</div>
+	<div class="connections" />
+</div>
+
+<style>
+	.main {
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+	}
+	.item {
+		position: absolute;
+		top: 0px;
+		left: 0px;
+	}
+</style>
