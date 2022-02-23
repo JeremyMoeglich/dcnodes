@@ -1,18 +1,32 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { getContext, onDestroy } from 'svelte';
 
 	import type { input_types } from './default_node/pass_value';
-	import type { item_type, position } from './types/item';
+	import type { internal_item_type, position } from './types/item';
 
 	export let type: 'out' | 'in';
-	export let item: item_type;
+	export let item: internal_item_type;
 	export let value: input_types[keyof input_types];
 	export let name: string;
 	let dragged = false;
 	let animation_id: number;
-	let current_position: position = { x: 0, y: 0 };
+	let element: HTMLElement;
+
+	function locator(): position {
+		const parent_position: position = getContext('sveltedc-position');
+		const rect = element.getBoundingClientRect();
+		const new_position: position = { x: rect.x - parent_position.x, y: rect.y - parent_position.y };
+		return new_position;
+	}
+	item.locators[name] = locator;
+	function drop(event: MouseEvent) {
+		if (type === 'in') {
+			item.update_fn(name)
+		}
+	}
 	function animate() {
 		animation_id = requestAnimationFrame(animate);
+		item.update_fn(name);
 	}
 	$: {
 		if (dragged) {
@@ -26,18 +40,19 @@
 
 <div
 	class="draggable"
-	draggable={true}
-	on:resize={() => {
-		(item.update_fn ?? (() => {console.log('Resize detected, update function missing')}))(name);
-	}}
-	on:dragstart={() => {
+	on:drop={drop}
+	draggable={type === 'out'}
+	bind:this={element}
+	on:dragstart={(event) => {
+		event.dataTransfer?.setData('text/plain', JSON.stringify({ id: item.id, name: name }));
 		dragged = true;
 	}}
 	on:dragend={() => {
 		dragged = false;
 	}}
-/>
-<div class="main" style={type === 'in' ? 'color: blue;' : 'color: orange;'} />
+>
+	<div class="main" style={type === 'in' ? 'color: blue;' : 'color: orange;'} />
+</div>
 
 <style>
 	.main {

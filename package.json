@@ -30,8 +30,10 @@
   "type": "module",
   "dependencies": {
     "@types/lodash-es": "^4.17.6",
+    "locally-unique-id-generator": "^0.1.5",
     "lodash-es": "^4.17.21",
     "svelte-dnd-action": "^0.9.15",
+    "svelte-watch-resize": "^1.0.3",
     "svelte2tsx": "^0.5.5"
   }
 }

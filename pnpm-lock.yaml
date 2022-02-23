@@ -9,6 +9,7 @@ specifiers:
   eslint: ^7.32.0
   eslint-config-prettier: ^8.4.0
   eslint-plugin-svelte3: ^3.4.0
+  locally-unique-id-generator: ^0.1.5
   lodash-es: ^4.17.21
   prettier: ^2.5.1
   prettier-plugin-svelte: ^2.6.0
@@ -16,19 +17,22 @@ specifiers:
   svelte-check: ^2.4.5
   svelte-dnd-action: ^0.9.15
   svelte-preprocess: ^4.10.3
+  svelte-watch-resize: ^1.0.3
   svelte2tsx: ^0.5.5
   tslib: ^2.3.1
   typescript: ^4.5.5
 
 dependencies:
   '@types/lodash-es': 4.17.6
+  locally-unique-id-generator: 0.1.5
   lodash-es: 4.17.21
   svelte-dnd-action: 0.9.15
+  svelte-watch-resize: 1.0.3
   svelte2tsx: 0.5.5_svelte@3.46.4+typescript@4.5.5
 
 devDependencies:
   '@sveltejs/adapter-auto': 1.0.0-next.17
-  '@sveltejs/kit': 1.0.0-next.282_svelte@3.46.4
+  '@sveltejs/kit': 1.0.0-next.283_svelte@3.46.4
   '@typescript-eslint/eslint-plugin': 5.12.1_78ba2542c270c83b2a80bb1c125195b6
   '@typescript-eslint/parser': 5.12.1_eslint@7.32.0+typescript@4.5.5
   eslint: 7.32.0
@@ -157,8 +161,8 @@ packages:
       esbuild: 0.13.15
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.282_svelte@3.46.4:
-    resolution: {integrity: sha512-EE6YrJLcMbYDZINQoC6brXdoxIjwmtHjGb4KXn9g7a69anYw8inBuupt9l9gn+HppTOlH95bP7PreEl09HbgJA==}
+  /@sveltejs/kit/1.0.0-next.283_svelte@3.46.4:
+    resolution: {integrity: sha512-QFhL7cdBKXUKhJ3sHZnL7q07Eohc54N7OpX2ZsJuNTA43Z6vX/HF/Jh4TK62kqT+thDVlT5J1iEEMppxA2IxoQ==}
     engines: {node: '>=14.13'}
     hasBin: true
     peerDependencies:
@@ -436,6 +440,10 @@ packages:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: true
 
+  /batch-processor/1.0.0:
+    resolution: {integrity: sha1-dclcMrdI4IUNEMKxaPa9vpiRrOg=}
+    dev: false
+
   /binary-extensions/2.2.0:
     resolution: {integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==}
     engines: {node: '>=8'}
@@ -568,6 +576,12 @@ packages:
     dependencies:
       esutils: 2.0.3
     dev: true
+
+  /element-resize-detector/1.2.4:
+    resolution: {integrity: sha512-Fl5Ftk6WwXE0wqCgNoseKWndjzZlDCwuPTcoVZfCP9R3EHQF8qUtr3YUPNETegRBOKqQKPW3n4kiIWngGi8tKg==}
+    dependencies:
+      batch-processor: 1.0.0
+    dev: false
 
   /emoji-regex/8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -1360,6 +1374,10 @@ packages:
       type-check: 0.4.0
     dev: true
 
+  /locally-unique-id-generator/0.1.5:
+    resolution: {integrity: sha512-cdISIqzCk2IiO9GIfL0oPyvOhz0tOetKOOasYWLfKHD7W/23EpWb12GymG0xCy8nhG+TMon5x+SS9PLaDd+avg==}
+    dev: false
+
   /lodash-es/4.17.21:
     resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
     dev: false
@@ -1841,6 +1859,12 @@ packages:
       svelte: 3.46.4
       typescript: 4.5.5
     dev: true
+
+  /svelte-watch-resize/1.0.3:
+    resolution: {integrity: sha512-ktqTnkdqfx4YRqeMJcX1jeSnQ2kJUVlj4/rLdaLbhM+RrxN87vS2EZ0cxlGZ7eXV86Ef05Q3dVqEiR+12PeoIw==}
+    dependencies:
+      element-resize-detector: 1.2.4
+    dev: false
 
   /svelte/3.46.4:
     resolution: {integrity: sha512-qKJzw6DpA33CIa+C/rGp4AUdSfii0DOTCzj/2YpSKKayw5WGSS624Et9L1nU1k2OVRS9vaENQXp2CVZNU+xvIg==}
