@@ -1,19 +1,29 @@
-import type { SvelteComponentTyped } from 'svelte';
+import type { SvelteComponent } from 'svelte';
 
-export interface position {
-	x: number;
-	y: number;
+const position_keys = ['x', 'y'] as const;
+
+export type vector = Record<typeof position_keys[number], number>;
+
+export interface connector {
+	locator: () => vector;
+	direction: vector;
 }
 
-export interface internal_item_type extends item_type {
-	update_fn: (name?: string) => never;
+export interface internal_item_type<Props extends Record<string, unknown> = Record<string, unknown>>
+	extends item_type<Props> {
+	update_fn: () => void;
 	id: number;
-	locators: Record<string, () => position>;
+	connectors: Record<string, connector>;
 }
 
-export interface item_type {
-	component: new (...args: unknown[]) => SvelteComponentTyped<Omit<item_type, 'component'>>;
-	position?: position;
-	props?: Record<string, unknown>;
-	connections?: Array<{ node_id: number; input_name: string } | position>;
+export interface connector_identifier {
+	node_id: number;
+	name: string;
+}
+
+export interface item_type<Props extends Record<string, unknown> = Record<string, unknown>> {
+	component: typeof SvelteComponent;
+	position?: vector;
+	props?: Props;
+	connections?: Record<string, connector_identifier>;
 }
