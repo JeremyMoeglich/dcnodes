@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { omit } from 'lodash-es';
 
-	import { setContext } from 'svelte';
 	import tsObjectEntries from 'ts-type-object-entries';
 
-	import type { item_type, internal_item_type, vector, connector } from './types/item';
+	import type { item_type, vector, connector, passed_data, internal_data } from './types/item';
 
 	export let items: Array<item_type>;
 
@@ -23,56 +22,52 @@
 	}
 
 	function update_connection(id: number) {
-		let connections = internal_items[id].connections;
+		let connections = items[id].connections;
 		if (connections === undefined) {
 			connections = {};
 		}
 		paths[id] = {};
 		tsObjectEntries(connections).map(([k, v]) => {
-			const start = internal_items[id].connectors[k];
-			const end: connector = internal_items[v.node_id].connectors[v.name];
+			const start = internals[id].connectors[k];
+			const end: connector = internals[v.index].connectors[v.name];
 			paths[id][k] = calculate_connection(start, end);
 		});
 	}
 
-	export let internal_items: Array<internal_item_type> = items.map((item, i) => ({
-		...item,
-		...{
-			update_fn: () => {
-				update_connection(i);
-			},
-			id: i,
-			connectors: {} as Record<string, { locator: () => vector; direction: vector }>
-		}
+	let internals: internal_data[];
+	$: internals = items.map((v, i) => ({
+		update_fn: () => {
+			update_connection(i);
+		},
+		id: i,
+		connectors: internals && internals[i]
+			? internals[i].connectors
+			: ({} as Record<string, { locator: () => vector; direction: vector }>)
 	}));
 	$: items.map((item) => {
-		item.position = item.position ?? { x: 0, y: 0 };
+		item.position ??= { x: 0, y: 0 };
+		item.connections ??= {};
 	});
 	let container: HTMLElement | undefined;
+	let datas: passed_data[];
 	$: {
 		const position: vector =
 			container === undefined
 				? { x: 0, y: 0 }
 				: omit(container.getBoundingClientRect(), ['height', 'width']);
-		setContext('sveltedc_position', position);
-		setContext('sveltedc_items', internal_items);
-	}
-	$: {
-		console.clear();
-		console.log(internal_items);
+		datas = items.map((item, i) => ({
+			internal: internals[i],
+			items: items,
+			current_item: item,
+			index: i,
+			parent_info: { position: position }
+		}));
 	}
 </script>
 
 <div class="main" bind:this={container}>
-	<div class="nodes">
-		{#each internal_items as item}
-			<div class="item" style={`transform: translate(${item.position?.x ?? 0}px, ${item.position?.y ?? 0}px);`}>
-				<svelte:component this={item.component} {...item.props ?? {}} bind:item />
-			</div>
-		{/each}
-	</div>
 	<div class="connections">
-		<svg>
+		<svg width="100%" height="100%">
 			{#each paths as node_paths}
 				{#each Object.values(node_paths) as path}
 					<path d={path} />
@@ -80,6 +75,23 @@
 			{/each}
 		</svg>
 	</div>
+	<div class="nodes">
+		{#each datas as data, i}
+			<div
+				class="item"
+				style={`transform: translate(${data.current_item.position?.x ?? 0}px, ${
+					data.current_item.position?.y ?? 0
+				}px);`}
+			>
+				<svelte:component
+					this={data.current_item.component}
+					{...data.current_item.props ?? {}}
+					bind:data
+				/>
+			</div>
+		{/each}
+	</div>
+	
 </div>
 
 <style>
@@ -87,6 +99,13 @@
 		width: 100%;
 		height: 100%;
 		overflow: hidden;
+	}
+	.connections, .nodes {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		top: 0px;
+		left: 0px;
 	}
 	.item {
 		position: absolute;

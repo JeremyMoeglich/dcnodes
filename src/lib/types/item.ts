@@ -9,15 +9,25 @@ export interface connector {
 	direction: vector;
 }
 
-export interface internal_item_type<Props extends Record<string, unknown> = Record<string, unknown>>
-	extends item_type<Props> {
+export interface parent_info_type {
+	position: vector;
+}
+
+export interface passed_data {
+	items: item_type[];
+	index: number;
+	current_item: item_type;
+	internal: internal_data;
+	parent_info: parent_info_type;
+}
+
+export interface internal_data {
 	update_fn: () => void;
-	id: number;
 	connectors: Record<string, connector>;
 }
 
 export interface connector_identifier {
-	node_id: number;
+	index: number;
 	name: string;
 }
 

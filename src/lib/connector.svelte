@@ -1,22 +1,20 @@
 <script lang="ts">
 	import { browser } from '$app/env';
-
-	import { getContext, onDestroy } from 'svelte';
+	import { onDestroy } from 'svelte';
 
 	import type { input_types } from './default_node/pass_value';
-	import type { internal_item_type, vector, connector_identifier } from './types/item';
+	import type { vector, connector_identifier, passed_data } from './types/item';
 
 	export let type: 'out' | 'in';
-	export let item: internal_item_type;
+	export let data: passed_data;
 	export let value: input_types[keyof input_types];
 	export let name: string;
 	export let direction: vector;
-	let dragged = false;
 	let animation_id: number;
 	let element: HTMLElement | undefined;
 
 	function get_relative_to_renderer(position: vector): vector {
-		const parent_position: vector = getContext('sveltedc-position');
+		const parent_position: vector = data.parent_info.position;
 		return { x: position.x - parent_position.x, y: position.y - parent_position.y };
 	}
 
@@ -30,35 +28,42 @@
 
 	function drop(event: DragEvent) {
 		if (type === 'in') {
-			const data: connector_identifier = JSON.parse(
+			const drop_data: connector_identifier = JSON.parse(
 				event.dataTransfer?.getData('text/plain') ?? '{ node_id: -1, name: "invalid" }'
 			);
-			((getContext('sveltedc_items') as Array<internal_item_type>)[data.node_id].connections ?? {})[
-				data.name
-			] = self_data;
+			const connections = data.items[drop_data.index].connections;
+			if (connections === undefined) {
+				throw 'connections is undefined';
+			} else {
+				connections[drop_data.name] = self_data;
+			}
+			data.items[drop_data.index].connections = connections;
 		}
+	}
+	function dragstart(event: DragEvent) {
+		if (event.dataTransfer) {
+			event.dataTransfer.setData('text/plain', JSON.stringify(self_data));
+		}
+
+		start();
 	}
 	function animate() {
-		animation_id = requestAnimationFrame(animate);
-		((getContext('sveltedc_items') as Array<internal_item_type>)[self_data.node_id].connections ??
-			{})[self_data.name] = self_data;
+		data.internal.update_fn();
+		start();
 	}
-	$: {
-		if (dragged) {
-			animation_id = requestAnimationFrame(animate);
-		} else {
-			if (browser) {
-				cancelAnimationFrame(animation_id);
-			}
-		}
-	}
-	item.connectors[name] = { locator: locator, direction: direction };
-	onDestroy(() => {
-		if (browser) {
+	function cancel() {
+		if (browser && animation_id) {
 			cancelAnimationFrame(animation_id);
 		}
-	});
-	const self_data: connector_identifier = { node_id: item.id, name: name };
+	}
+	function start() {
+		animation_id = requestAnimationFrame(animate);
+	}
+
+	data.internal.connectors[name] = { locator: locator, direction: direction };
+	onDestroy(cancel);
+	let self_data: connector_identifier;
+	$: self_data = { index: data.index, name: name };
 </script>
 
 <div
@@ -68,16 +73,12 @@
 			event.preventDefault();
 		}
 	}}
-	on:drop={(event) => drop(event)}
+	on:drop={drop}
 	draggable={type === 'out'}
 	bind:this={element}
-	on:dragstart={(event) => {
-		event.dataTransfer?.setData('text/plain', JSON.stringify(self_data));
-		dragged = true;
-	}}
+	on:dragstart={dragstart}
 	on:dragend={() => {
-		dragged = false;
-		item.update_fn();
+		cancel();
 	}}
 >
 	<div class="main" style={type === 'in' ? 'color: blue;' : 'color: orange;'} />
