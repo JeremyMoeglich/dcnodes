@@ -5,7 +5,6 @@
 	import type { input_types } from './default_node/pass_value';
 	import type { vector, connector_identifier, passed_data, connector_types } from './types/item';
 
-	export let type: connector_types;
 	export let data: passed_data;
 	export let value: input_types[keyof input_types];
 	export let name: string;
@@ -26,25 +25,10 @@
 		return get_relative_to_renderer(rect);
 	}
 
-	function drop(event: DragEvent) {
-		if (type === 'in') {
-			const drop_data: connector_identifier = JSON.parse(
-				event.dataTransfer?.getData('text/plain') ?? '{ node_id: -1, name: "invalid" }'
-			);
-			const connections = data.items[drop_data.index].connections;
-			if (connections === undefined) {
-				throw 'connections is undefined';
-			} else {
-				connections[drop_data.name].add(self_data);
-			}
-			data.items[drop_data.index].connections = connections;
-		}
-	}
 	function dragstart(event: DragEvent) {
 		if (event.dataTransfer) {
 			event.dataTransfer.setData('text/plain', JSON.stringify(self_data));
 		}
-
 		start();
 	}
 	function animate() {
@@ -60,28 +44,22 @@
 		animation_id = requestAnimationFrame(animate);
 	}
 
-	data.internal.connectors[name] = { locator: locator, direction: direction };
+	$: data.internal.connectors[name] = { locator: locator, direction: direction };
 	onDestroy(cancel);
 	let self_data: connector_identifier;
-	$: self_data = { index: data.index, name: name, type: type };
+	$: self_data = { index: data.index, name: name, type: 'out' };
 </script>
 
 <div
 	class="draggable"
-	on:dragover={(event) => {
-		if (type === 'in') {
-			event.preventDefault();
-		}
-	}}
-	on:drop={drop}
-	draggable={type === 'out'}
+	draggable={true}
 	bind:this={element}
 	on:dragstart={dragstart}
 	on:dragend={() => {
 		cancel();
 	}}
 >
-	<div class="main" style={type === 'in' ? 'color: blue;' : 'color: orange;'} />
+	<div class="main" />
 </div>
 
 <style>
@@ -89,5 +67,6 @@
 		width: 16px;
 		height: 16px;
 		border: 1px solid rgb(0, 0, 0);
+		background-color: rgb(255, 202, 88);
 	}
 </style>

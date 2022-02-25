@@ -2,7 +2,8 @@
 	import { tsObjectEntries } from 'ts-type-object-entries';
 	import type { passed_data } from '$lib/types/item';
 
-	import Connector from './connector.svelte';
+	import InConnector from './in_connector.svelte';
+	import OutConnector from './out_connector.svelte';
 	import type { io_type } from './default_node/pass_value';
 
 	export let inputs: io_type;
@@ -10,14 +11,25 @@
 	export let data: passed_data;
 </script>
 
-<div>
+<div class="main">
 	{#each tsObjectEntries(inputs) as [name, value]}
-		<Connector direction={{ x: -1, y: 0 }} type="in" bind:value={value.value} {name} bind:data />
-		<p>{name}</p>
+		<div>
+			<InConnector direction={{ x: -1, y: 0 }} bind:value={value.value} {name} bind:data />
+			<p>{name}</p>
+		</div>
 	{/each}
 
 	{#each tsObjectEntries(outputs) as [name, value]}
-		<Connector direction={{ x: 1, y: 0 }} type="out" bind:value={value.value} {name} bind:data />
-		<p>{name}</p>
+		<div>
+			<OutConnector direction={{ x: 1, y: 0 }} bind:value={value.value} {name} bind:data />
+			<p>{name}</p>
+		</div>
 	{/each}
 </div>
+
+<style>
+	.main {
+		background-color: gray;
+		display: flex;
+	}
+</style>
