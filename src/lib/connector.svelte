@@ -3,9 +3,9 @@
 	import { onDestroy } from 'svelte';
 
 	import type { input_types } from './default_node/pass_value';
-	import type { vector, connector_identifier, passed_data } from './types/item';
+	import type { vector, connector_identifier, passed_data, connector_types } from './types/item';
 
-	export let type: 'out' | 'in';
+	export let type: connector_types;
 	export let data: passed_data;
 	export let value: input_types[keyof input_types];
 	export let name: string;
@@ -35,7 +35,7 @@
 			if (connections === undefined) {
 				throw 'connections is undefined';
 			} else {
-				connections[drop_data.name] = self_data;
+				connections[drop_data.name].add(self_data);
 			}
 			data.items[drop_data.index].connections = connections;
 		}
@@ -63,7 +63,7 @@
 	data.internal.connectors[name] = { locator: locator, direction: direction };
 	onDestroy(cancel);
 	let self_data: connector_identifier;
-	$: self_data = { index: data.index, name: name };
+	$: self_data = { index: data.index, name: name, type: type };
 </script>
 
 <div

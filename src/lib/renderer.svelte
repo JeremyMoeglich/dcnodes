@@ -3,11 +3,18 @@
 
 	import tsObjectEntries from 'ts-type-object-entries';
 
-	import type { item_type, vector, connector, passed_data, internal_data } from './types/item';
+	import type {
+		item_type,
+		vector,
+		connector,
+		passed_data,
+		internal_data,
+		connector_identifier
+	} from './types/item';
 
 	export let items: Array<item_type>;
 
-	let paths: Record<string, string>[] = items.map(() => ({}));
+	let paths: Record<string, Record<string, string>>[] = items.map(() => ({}));
 
 	function direction_to_offset(direction: vector): vector {
 		return direction;
@@ -27,10 +34,12 @@
 			connections = {};
 		}
 		paths[id] = {};
-		tsObjectEntries(connections).map(([k, v]) => {
-			const start = internals[id].connectors[k];
-			const end: connector = internals[v.index].connectors[v.name];
-			paths[id][k] = calculate_connection(start, end);
+		tsObjectEntries(connections).map(([k, connector]) => {
+			Array.from(connector).map((v) => {
+				const start = internals[id].connectors[k];
+				const end: connector = internals[v.index].connectors[v.name];
+				paths[id][k][JSON.stringify(v as connector_identifier)] = calculate_connection(start, end);
+			});
 		});
 	}
 
@@ -40,9 +49,10 @@
 			update_connection(i);
 		},
 		id: i,
-		connectors: internals && internals[i]
-			? internals[i].connectors
-			: ({} as Record<string, { locator: () => vector; direction: vector }>)
+		connectors:
+			internals && internals[i]
+				? internals[i].connectors
+				: ({} as Record<string, { locator: () => vector; direction: vector }>)
 	}));
 	$: items.map((item) => {
 		item.position ??= { x: 0, y: 0 };
@@ -69,8 +79,10 @@
 	<div class="connections">
 		<svg width="100%" height="100%">
 			{#each paths as node_paths}
-				{#each Object.values(node_paths) as path}
-					<path d={path} />
+				{#each Object.values(node_paths) as paths}
+					{#each Object.values(paths) as path}
+						<path d={path} />
+					{/each}
 				{/each}
 			{/each}
 		</svg>
@@ -91,7 +103,6 @@
 			</div>
 		{/each}
 	</div>
-	
 </div>
 
 <style>
@@ -100,7 +111,8 @@
 		height: 100%;
 		overflow: hidden;
 	}
-	.connections, .nodes {
+	.connections,
+	.nodes {
 		position: absolute;
 		width: 100%;
 		height: 100%;

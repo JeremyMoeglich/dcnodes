@@ -12,12 +12,12 @@
 
 <div>
 	{#each tsObjectEntries(inputs) as [name, value]}
-		<Connector direction={{x: -1, y: 0}} type="in" bind:value={value.value} {name} bind:data />
+		<Connector direction={{ x: -1, y: 0 }} type="in" bind:value={value.value} {name} bind:data />
 		<p>{name}</p>
 	{/each}
 
 	{#each tsObjectEntries(outputs) as [name, value]}
-		<Connector direction={{x: 1, y: 0}}  type="out" bind:value={value.value} {name} bind:data />
+		<Connector direction={{ x: 1, y: 0 }} type="out" bind:value={value.value} {name} bind:data />
 		<p>{name}</p>
 	{/each}
 </div>

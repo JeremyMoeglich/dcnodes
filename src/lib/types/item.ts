@@ -4,6 +4,8 @@ const position_keys = ['x', 'y'] as const;
 
 export type vector = Record<typeof position_keys[number], number>;
 
+export type connector_types = 'in' | 'out';
+
 export interface connector {
 	locator: () => vector;
 	direction: vector;
@@ -29,11 +31,12 @@ export interface internal_data {
 export interface connector_identifier {
 	index: number;
 	name: string;
+	type: connector_types;
 }
 
 export interface item_type<Props extends Record<string, unknown> = Record<string, unknown>> {
 	component: typeof SvelteComponent;
 	position?: vector;
 	props?: Props;
-	connections?: Record<string, connector_identifier>;
+	connections?: Record<string, Set<connector_identifier>>;
 }
