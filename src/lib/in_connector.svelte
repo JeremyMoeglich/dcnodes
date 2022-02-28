@@ -20,6 +20,11 @@
 		const rect = element.getBoundingClientRect();
 		return get_relative_to_renderer(rect);
 	}
+	function set_add<T>(set: Set<T> | undefined, v: T): Set<T> {
+		set ??= new Set();
+		set.add(v);
+		return set;
+	}
 
 	function drop(event: DragEvent) {
 		const drop_data: connector_identifier = JSON.parse(
@@ -29,10 +34,10 @@
 		if (connections === undefined) {
 			throw 'connections is undefined';
 		} else {
-			connections[drop_data.name].add(self_data);
+			connections[drop_data.name] = set_add(connections[drop_data.name], self_data);
 		}
 		data.items[drop_data.index].connections = connections;
-		console.log(data.items[drop_data.index].connections)
+		data.internal.update_fn()
 	}
 
 	data.internal.connectors[name] = { locator: locator, direction: direction };

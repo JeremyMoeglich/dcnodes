@@ -26,6 +26,7 @@ export interface passed_data {
 export interface internal_data {
 	update_fn: () => void;
 	connectors: Record<string, connector>;
+	drag_value: number;
 }
 
 export interface connector_identifier {

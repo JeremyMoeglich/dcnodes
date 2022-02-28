@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { omit } from 'lodash-es';
-
+	import { draggable } from '@neodrag/svelte';
 	import tsObjectEntries from 'ts-type-object-entries';
 
 	import type {
@@ -16,15 +16,20 @@
 
 	let paths: Record<string, Record<string, string>>[] = items.map(() => ({}));
 
-	function direction_to_offset(direction: vector): vector {
-		return direction;
+	export let default_drag = true;
+
+	function direction_to_offset(direction: vector, absolute_position: vector): vector {
+		return {
+			x: direction.x * 150 + absolute_position.x,
+			y: direction.y * 150 + absolute_position.y
+		};
 	}
 
 	function calculate_connection(start: connector, end: connector): string {
 		const start_position = start.locator();
-		const start_offset = direction_to_offset(start.direction);
-		const end_offset = direction_to_offset(end.direction);
+		const start_offset = direction_to_offset(start.direction, start_position);
 		const end_position = end.locator();
+		const end_offset = direction_to_offset(end.direction, end_position);
 		return `M ${start_position.x} ${start_position.y} C ${start_offset.x} ${start_offset.y}, ${end_offset.x} ${end_offset.y}, ${end_position.x} ${end_position.y}`;
 	}
 
@@ -35,6 +40,7 @@
 		}
 		paths[id] = {};
 		tsObjectEntries(connections).map(([k, connector]) => {
+			paths[id][k] ??= {};
 			Array.from(connector).map((v) => {
 				const start = internals[id].connectors[k];
 				const end: connector = internals[v.index].connectors[v.name];
@@ -49,10 +55,10 @@
 			update_connection(i);
 		},
 		id: i,
-		connectors:
-			internals && internals[i]
-				? internals[i].connectors
-				: ({} as Record<string, { locator: () => vector; direction: vector }>)
+		drag_value: internals?.[i]?.drag_value ?? 0,
+		connectors: internals?.[i]
+			? internals[i].connectors
+			: ({} as Record<string, { locator: () => vector; direction: vector }>)
 	}));
 	$: items.map((item) => {
 		item.position ??= { x: 0, y: 0 };
@@ -77,11 +83,11 @@
 
 <div class="main" bind:this={container}>
 	<div class="connections">
-		<svg width="100%" height="100%">
+		<svg width="100%" height="100%" stroke="#000" fill="#000" stroke-width={5}>
 			{#each paths as node_paths}
 				{#each Object.values(node_paths) as paths}
 					{#each Object.values(paths) as path}
-						<path d={path} />
+						<path d={path} fill="none" />
 					{/each}
 				{/each}
 			{/each}
@@ -91,9 +97,10 @@
 		{#each datas as data, i}
 			<div
 				class="item"
-				style={`transform: translate(${data.current_item.position?.x ?? 0}px, ${
-					data.current_item.position?.y ?? 0
-				}px);`}
+				use:draggable={{
+					position: data.current_item.position,
+					disabled: !(data.internal.drag_value <= 0) === default_drag
+				}}
 			>
 				<svelte:component
 					this={data.current_item.component}
@@ -102,6 +109,11 @@
 				/>
 			</div>
 		{/each}
+	</div>
+	<div class="debug">
+		<p>
+			{datas.map((obj) => obj.internal.drag_value)}
+		</p>
 	</div>
 </div>
 
@@ -118,6 +130,10 @@
 		height: 100%;
 		top: 0px;
 		left: 0px;
+	}
+	.debug {
+		position: absolute;
+		color: white;
 	}
 	.item {
 		position: absolute;
