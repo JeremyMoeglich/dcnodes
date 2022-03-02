@@ -1,22 +1,27 @@
 <script lang="ts">
 	import { omit } from 'lodash-es';
 	import { draggable } from '@neodrag/svelte';
-	import tsObjectEntries from 'ts-type-object-entries';
-
 	import type {
 		item_type,
 		vector,
 		connector,
 		passed_data,
-		internal_data,
-		connector_identifier
+		connector_identifier,
+		connector_types
 	} from './types/item';
+import { typed_entries, typed_from_entries } from './utilities/typed_entries';
 
-	export let items: Array<item_type>;
-
-	let paths: Record<string, Record<string, string>>[] = items.map(() => ({}));
+	export let items: Record<number, item_type>;
 
 	export let default_drag = true;
+
+	function map_values<K extends PropertyKey, T extends Record<K, V>, V, NV>(
+		obj: T,
+		func: (v: V) => NV
+	): Record<K, NV> {
+		const r = typed_from_entries(typed_entries(obj));
+		return r;
+	}
 
 	function direction_to_offset(direction: vector, absolute_position: vector): vector {
 		return {
@@ -33,37 +38,23 @@
 		return `M ${start_position.x} ${start_position.y} C ${start_offset.x} ${start_offset.y}, ${end_offset.x} ${end_offset.y}, ${end_position.x} ${end_position.y}`;
 	}
 
-	function update_connection(id: number) {
-		let connections = items[id].connections;
-		if (connections === undefined) {
-			connections = {};
-		}
-		paths[id] = {};
-		tsObjectEntries(connections).map(([k, connector]) => {
-			paths[id][k] ??= {};
+	function update_connection(id: number, name?: string, type: connector_types | 'both' = 'both') {
+		const connections = items[id].connections ?? {};
+		const connections_to_update = name
+			? [[name, connections[name]] as [string, Set<connector_identifier<'in'>>]]
+			: typed_entries(connections);
+
+		datas[id].internal.paths = {};
+		connections_to_update.map(([k, connector]) => {
+			datas[id].internal.paths[k] ??= {};
 			Array.from(connector).map((v) => {
-				const start = internals[id].connectors[k];
-				const end: connector = internals[v.index].connectors[v.name];
-				paths[id][k][JSON.stringify(v as connector_identifier)] = calculate_connection(start, end);
+				const start = datas[id].internal.connectors[k];
+				const end: connector = datas[v.index].internal.connectors[v.name];
+				datas[id].internal.paths[k][JSON.stringify(v)] = calculate_connection(start, end);
 			});
 		});
 	}
 
-	let internals: internal_data[];
-	$: internals = items.map((v, i) => ({
-		update_fn: () => {
-			update_connection(i);
-		},
-		id: i,
-		drag_value: internals?.[i]?.drag_value ?? 0,
-		connectors: internals?.[i]
-			? internals[i].connectors
-			: ({} as Record<string, { locator: () => vector; direction: vector }>)
-	}));
-	$: items.map((item) => {
-		item.position ??= { x: 0, y: 0 };
-		item.connections ??= {};
-	});
 	let container: HTMLElement | undefined;
 	let datas: passed_data[];
 	$: {
@@ -71,8 +62,26 @@
 			container === undefined
 				? { x: 0, y: 0 }
 				: omit(container.getBoundingClientRect(), ['height', 'width']);
+		items.map((item) => {
+			item.position ??= { x: 0, y: 0 };
+			item.connections ??= {};
+		});
 		datas = items.map((item, i) => ({
-			internal: internals[i],
+			internal: {
+				update_fn: (name?: string) => {
+					update_connection(i, name);
+				},
+				id: i,
+				drag_value:
+					datas?.[i]?.internal?.drag_value ??
+					(() => {
+						console.log('overwrite', datas?.[i]?.internal?.drag_value);
+						return 0;
+					})(),
+				connectors: datas?.[i]?.internal
+					? datas?.[i]?.internal.connectors
+					: ({} as Record<string, { locator: () => vector; direction: vector }>)
+			},
 			items: items,
 			current_item: item,
 			index: i,
@@ -99,7 +108,11 @@
 				class="item"
 				use:draggable={{
 					position: data.current_item.position,
-					disabled: !(data.internal.drag_value <= 0) === default_drag
+					disabled: !(data.internal.drag_value <= 0) === default_drag,
+					onDrag: ({ offsetX, offsetY }) => {
+						data.current_item.position = { x: offsetX, y: offsetY };
+						data.internal.update_fn();
+					}
 				}}
 			>
 				<svelte:component

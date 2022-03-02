@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { input_types } from './default_node/pass_value';
+	import Interactive from './interactive.svelte';
 	import type { vector, connector_identifier, passed_data, connector_types } from './types/item';
 
 	export let data: passed_data;
@@ -27,7 +28,7 @@
 	}
 
 	function drop(event: DragEvent) {
-		const drop_data: connector_identifier = JSON.parse(
+		const drop_data: connector_identifier<'out'> = JSON.parse(
 			event.dataTransfer?.getData('text/plain') ?? '{ node_id: -1, name: "invalid" }'
 		);
 		const connections = data.items[drop_data.index].connections;
@@ -37,24 +38,26 @@
 			connections[drop_data.name] = set_add(connections[drop_data.name], self_data);
 		}
 		data.items[drop_data.index].connections = connections;
-		data.internal.update_fn()
+		data.internal.update_fn();
 	}
 
 	data.internal.connectors[name] = { locator: locator, direction: direction };
-	let self_data: connector_identifier;
+	let self_data: connector_identifier<'in'>;
 	$: self_data = { index: data.index, name: name, type: 'in' };
 </script>
 
-<div
-	class="draggable"
-	on:dragover={(event) => {
-		event.preventDefault();
-	}}
-	on:drop={drop}
-	bind:this={element}
->
-	<div class="main" />
-</div>
+<Interactive bind:data>
+	<div
+		class="draggable"
+		on:dragover={(event) => {
+			event.preventDefault();
+		}}
+		on:drop={drop}
+		bind:this={element}
+	>
+		<div class="main" />
+	</div>
+</Interactive>
 
 <style>
 	.main {

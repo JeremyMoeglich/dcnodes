@@ -27,17 +27,18 @@ export interface internal_data {
 	update_fn: () => void;
 	connectors: Record<string, connector>;
 	drag_value: number;
+	paths: Record<string, Record<string, string>>
 }
 
-export interface connector_identifier {
+export interface connector_identifier<T extends connector_types = connector_types> {
 	index: number;
 	name: string;
-	type: connector_types;
+	type: T;
 }
 
 export interface item_type<Props extends Record<string, unknown> = Record<string, unknown>> {
 	component: typeof SvelteComponent;
 	position?: vector;
 	props?: Props;
-	connections?: Record<string, Set<connector_identifier>>;
+	connections?: Record<string, Set<connector_identifier<'in'>>>;
 }

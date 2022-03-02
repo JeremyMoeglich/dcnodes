@@ -5,31 +5,33 @@
 
 	export let data: passed_data;
 	export let invert = false;
+	let previous_offset = 0;
+	let current_offset = 0;
 	let is_hovered = false;
 
-	function enter() {
-		if (invert) {
-			data.internal.drag_value -= 1;
-		} else {
-			data.internal.drag_value += 1;
-		}
-
-		is_hovered = true;
+	function update_offset(invert: boolean, is_hovered: boolean) {
+		current_offset = invert === is_hovered ? 0 : 1;
+		data.internal.drag_value = data.internal.drag_value + current_offset - previous_offset;
+		previous_offset = current_offset;
 	}
 
-	function leave() {
-		if (invert) {
-			data.internal.drag_value += 1;
-		} else {
-			data.internal.drag_value -= 1;
-		}
-
+	onDestroy(() => {
 		is_hovered = false;
-	}
+		update_offset(invert, is_hovered);
+	});
 
-	onDestroy(leave);
+	$: {
+		update_offset(invert, is_hovered);
+	}
 </script>
 
-<div on:mouseenter={enter} on:mouseleave={leave}>
+<div
+	on:mouseenter={() => {
+		is_hovered = true;
+	}}
+	on:mouseleave={() => {
+		is_hovered = false;
+	}}
+>
 	<slot />
 </div>

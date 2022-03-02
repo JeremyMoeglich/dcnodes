@@ -3,13 +3,13 @@
 	import { onDestroy } from 'svelte';
 
 	import type { input_types } from './default_node/pass_value';
-	import type { vector, connector_identifier, passed_data, connector_types } from './types/item';
+	import Interactive from './interactive.svelte';
+	import type { vector, connector_identifier, passed_data } from './types/item';
 
 	export let data: passed_data;
 	export let value: input_types[keyof input_types];
 	export let name: string;
 	export let direction: vector;
-	let animation_id: number;
 	let element: HTMLElement | undefined;
 
 	function get_relative_to_renderer(position: vector): vector {
@@ -29,38 +29,26 @@
 		if (event.dataTransfer) {
 			event.dataTransfer.setData('text/plain', JSON.stringify(self_data));
 		}
-		start();
-	}
-	function animate() {
-		data.internal.update_fn();
-		start();
-	}
-	function cancel() {
-		if (browser && animation_id) {
-			cancelAnimationFrame(animation_id);
-		}
-	}
-	function start() {
-		animation_id = requestAnimationFrame(animate);
 	}
 
 	$: data.internal.connectors[name] = { locator: locator, direction: direction };
-	onDestroy(cancel);
 	let self_data: connector_identifier;
 	$: self_data = { index: data.index, name: name, type: 'out' };
 </script>
 
-<div
-	class="draggable"
-	draggable={true}
-	bind:this={element}
-	on:dragstart={dragstart}
-	on:dragend={() => {
-		cancel();
-	}}
->
-	<div class="main" />
-</div>
+<Interactive bind:data>
+	<div
+		class="draggable"
+		on:drag={() => {
+			data.internal.update_fn();
+		}}
+		draggable={true}
+		bind:this={element}
+		on:dragstart={dragstart}
+	>
+		<div class="main" />
+	</div>
+</Interactive>
 
 <style>
 	.main {
