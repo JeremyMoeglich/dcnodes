@@ -6,6 +6,8 @@ export type vector = Record<typeof position_keys[number], number>;
 
 export type connector_types = 'in' | 'out';
 
+export type node_identifier = number;
+
 export interface connector {
 	locator: () => vector;
 	direction: vector;
@@ -16,7 +18,7 @@ export interface parent_info_type {
 }
 
 export interface passed_data {
-	items: item_type[];
+	items: Record<node_identifier, item_type>;
 	index: number;
 	current_item: item_type;
 	internal: internal_data;
@@ -24,14 +26,14 @@ export interface passed_data {
 }
 
 export interface internal_data {
-	update_fn: () => void;
+	update_fn: (name?: string) => void;
 	connectors: Record<string, connector>;
 	drag_value: number;
-	paths: Record<string, Record<string, string>>
+	paths: Record<string, Record<string, string>>;
 }
 
 export interface connector_identifier<T extends connector_types = connector_types> {
-	index: number;
+	index: node_identifier;
 	name: string;
 	type: T;
 }

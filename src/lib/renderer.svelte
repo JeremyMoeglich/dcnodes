@@ -7,20 +7,27 @@
 		connector,
 		passed_data,
 		connector_identifier,
-		connector_types
+		connector_types,
+		node_identifier
 	} from './types/item';
-import { typed_entries, typed_from_entries } from './utilities/typed_entries';
+	import { typed_entries, typed_from_entries } from './utilities/typed_entries';
 
 	export let items: Record<number, item_type>;
 
 	export let default_drag = true;
 
-	function map_values<K extends PropertyKey, T extends Record<K, V>, V, NV>(
-		obj: T,
+	function map_values<K extends PropertyKey, V, NV>(
+		obj: Record<K, V>,
 		func: (v: V) => NV
 	): Record<K, NV> {
-		const r = typed_from_entries(typed_entries(obj));
-		return r;
+		return typed_from_entries(typed_entries(obj).map(([k, v]) => [k, func(v)]));
+	}
+
+	function map_entries<K extends PropertyKey, V, NK extends PropertyKey, NV>(
+		obj: Record<K, V>,
+		func: (entries: [K, V]) => [NK, NV]
+	): Record<NK, NV> {
+		return typed_from_entries(typed_entries(obj).map((entry) => func(entry)));
 	}
 
 	function direction_to_offset(direction: vector, absolute_position: vector): vector {
@@ -56,46 +63,50 @@ import { typed_entries, typed_from_entries } from './utilities/typed_entries';
 	}
 
 	let container: HTMLElement | undefined;
-	let datas: passed_data[];
+	let datas: Record<node_identifier, passed_data>;
 	$: {
 		const position: vector =
 			container === undefined
 				? { x: 0, y: 0 }
 				: omit(container.getBoundingClientRect(), ['height', 'width']);
-		items.map((item) => {
+		map_values(items, (item) => {
 			item.position ??= { x: 0, y: 0 };
 			item.connections ??= {};
 		});
-		datas = items.map((item, i) => ({
-			internal: {
-				update_fn: (name?: string) => {
-					update_connection(i, name);
+		datas = map_entries(items, ([k, item]) => [
+			k,
+			{
+				internal: {
+					update_fn: (name?: string) => {
+						update_connection(k, name);
+					},
+					id: k,
+					drag_value:
+						datas?.[k]?.internal?.drag_value ??
+						(() => {
+							console.log('overwrite', datas?.[k]?.internal?.drag_value);
+							return 0;
+						})(),
+					connectors: datas?.[k]?.internal
+						? datas?.[k]?.internal.connectors
+						: ({} as Record<string, connector>),
+					paths: datas?.[k].internal?.paths ?? {}
 				},
-				id: i,
-				drag_value:
-					datas?.[i]?.internal?.drag_value ??
-					(() => {
-						console.log('overwrite', datas?.[i]?.internal?.drag_value);
-						return 0;
-					})(),
-				connectors: datas?.[i]?.internal
-					? datas?.[i]?.internal.connectors
-					: ({} as Record<string, { locator: () => vector; direction: vector }>)
-			},
-			items: items,
-			current_item: item,
-			index: i,
-			parent_info: { position: position }
-		}));
+				items: items,
+				current_item: item,
+				index: k,
+				parent_info: { position: position }
+			}
+		]);
 	}
 </script>
 
 <div class="main" bind:this={container}>
 	<div class="connections">
 		<svg width="100%" height="100%" stroke="#000" fill="#000" stroke-width={5}>
-			{#each paths as node_paths}
-				{#each Object.values(node_paths) as paths}
-					{#each Object.values(paths) as path}
+			{#each Object.values(datas) as data}
+				{#each Object.values(data.internal.paths) as connector_paths}
+					{#each Object.values(connector_paths) as path}
 						<path d={path} fill="none" />
 					{/each}
 				{/each}
@@ -103,7 +114,7 @@ import { typed_entries, typed_from_entries } from './utilities/typed_entries';
 		</svg>
 	</div>
 	<div class="nodes">
-		{#each datas as data, i}
+		{#each Object.values(datas) as data}
 			<div
 				class="item"
 				use:draggable={{
@@ -125,7 +136,7 @@ import { typed_entries, typed_from_entries } from './utilities/typed_entries';
 	</div>
 	<div class="debug">
 		<p>
-			{datas.map((obj) => obj.internal.drag_value)}
+			{map_entries(datas, ([k, v]) => [k, v.internal.drag_value])}
 		</p>
 	</div>
 </div>
