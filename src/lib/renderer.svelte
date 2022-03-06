@@ -45,21 +45,43 @@
 		return `M ${start_position.x} ${start_position.y} C ${start_offset.x} ${start_offset.y}, ${end_offset.x} ${end_offset.y}, ${end_position.x} ${end_position.y}`;
 	}
 
-	function update_connection(id: number, name?: string, type: connector_types | 'both' = 'both') {
+	function update_single_connection(
+		output: connector_identifier<'out'>,
+		input: connector_identifier<'in'>
+	) {
+		const start: connector = datas[output.index].internal.connectors[output.name];
+		const end: connector = datas[input.index].internal.connectors[input.name];
+		datas[output.index].internal.paths[output.name][JSON.stringify(input)] = calculate_connection(
+			start,
+			end
+		);
+	}
+	let back_connections: Record<node_identifier, Record<string, Set<connector_identifier<'in'>>>>;
+	function update_connection(
+		id: node_identifier,
+		name?: string,
+		type: connector_types | 'both' = 'both'
+	) {
 		const connections = items[id].connections ?? {};
 		const connections_to_update = name
 			? [[name, connections[name]] as [string, Set<connector_identifier<'in'>>]]
 			: typed_entries(connections);
-
-		datas[id].internal.paths = {};
-		connections_to_update.map(([k, connector]) => {
-			datas[id].internal.paths[k] ??= {};
-			Array.from(connector).map((v) => {
-				const start = datas[id].internal.connectors[k];
-				const end: connector = datas[v.index].internal.connectors[v.name];
-				datas[id].internal.paths[k][JSON.stringify(v)] = calculate_connection(start, end);
+		if (type === 'out' || type === 'both') {
+			connections_to_update.map(([k, v]) => {
+				back_connections[id][k].forEach((identifier) => {
+					update_single_connection(v, identifier);
+				});
 			});
-		});
+		}
+		if (type === 'out' || type === 'both') {
+			datas[id].internal.paths = {};
+			connections_to_update.map(([k, connector]) => {
+				datas[id].internal.paths[k] ??= {};
+				Array.from(connector).map((identifier) => {
+					update_single_connection({ index: id, name: k, type: 'out' }, identifier);
+				});
+			});
+		}
 	}
 
 	let container: HTMLElement | undefined;
