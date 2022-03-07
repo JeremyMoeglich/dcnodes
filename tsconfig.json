@@ -1,5 +1,6 @@
 {
 	"compilerOptions": {
+		"extends": "./.svelte-kit/tsconfig.json",
 		"moduleResolution": "node",
 		"module": "es2020",
 		"lib": ["es2020", "DOM"],

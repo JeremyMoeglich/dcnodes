@@ -47,16 +47,19 @@
 
 	function update_single_connection(
 		output: connector_identifier<'out'>,
-		input: connector_identifier<'in'>
+		input: connector_identifier<'in'> | vector
 	) {
 		const start: connector = datas[output.index].internal.connectors[output.name];
-		const end: connector = datas[input.index].internal.connectors[input.name];
+		const end: connector =
+			'x' in input
+				? { direction: { x: -1, y: 0 }, locator: () => input }
+				: datas[input.index].internal.connectors[input.name];
 		datas[output.index].internal.paths[output.name][JSON.stringify(input)] = calculate_connection(
 			start,
 			end
 		);
 	}
-	let back_connections: Record<node_identifier, Record<string, Set<connector_identifier<'in'>>>>;
+	let back_connections: Record<node_identifier, Record<string, Set<connector_identifier<'out'>>>>;
 	function update_connection(
 		id: node_identifier,
 		name?: string,
@@ -66,10 +69,13 @@
 		const connections_to_update = name
 			? [[name, connections[name]] as [string, Set<connector_identifier<'in'>>]]
 			: typed_entries(connections);
-		if (type === 'out' || type === 'both') {
-			connections_to_update.map(([k, v]) => {
+		//console.log(connections_to_update)
+		if (type === 'in' || type === 'both') {
+			connections_to_update.map(([k, connector]) => {
 				back_connections[id][k].forEach((identifier) => {
-					update_single_connection(v, identifier);
+					connector.forEach((out_identifier) => {
+						update_single_connection(identifier, out_identifier);
+					});
 				});
 			});
 		}
@@ -77,7 +83,14 @@
 			datas[id].internal.paths = {};
 			connections_to_update.map(([k, connector]) => {
 				datas[id].internal.paths[k] ??= {};
-				Array.from(connector).map((identifier) => {
+				connector.forEach((identifier) => {
+					if (!('x' in identifier)) {
+						((back_connections?.[identifier.index] ?? {})?.[identifier.name] ?? new Set()).add({
+							index: id,
+							name: k,
+							type: 'out'
+						});
+					}
 					update_single_connection({ index: id, name: k, type: 'out' }, identifier);
 				});
 			});
@@ -99,14 +112,14 @@
 			k,
 			{
 				internal: {
-					update_fn: (name?: string) => {
-						update_connection(k, name);
+					update_fn: (name?: string, type: connector_types | 'both' = 'both') => {
+						update_connection(k, name, type);
 					},
 					id: k,
 					drag_value:
 						datas?.[k]?.internal?.drag_value ??
 						(() => {
-							console.log('overwrite', datas?.[k]?.internal?.drag_value);
+							console.debug('overwrite', datas?.[k]?.internal?.drag_value);
 							return 0;
 						})(),
 					connectors: datas?.[k]?.internal
@@ -148,6 +161,12 @@
 					}
 				}}
 			>
+				<p>
+					{data.index}
+					{data.internal.drag_value}
+					{JSON.stringify(data.current_item.connections)}
+					{!(data.internal.drag_value <= 0) === true}
+				</p>
 				<svelte:component
 					this={data.current_item.component}
 					{...data.current_item.props ?? {}}
@@ -155,11 +174,6 @@
 				/>
 			</div>
 		{/each}
-	</div>
-	<div class="debug">
-		<p>
-			{map_entries(datas, ([k, v]) => [k, v.internal.drag_value])}
-		</p>
 	</div>
 </div>
 
@@ -187,5 +201,9 @@
 		left: 0px;
 		width: fit-content;
 		height: fit-content;
+	}
+	p {
+		margin: 0px;
+		color: white;
 	}
 </style>

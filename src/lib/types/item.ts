@@ -1,8 +1,11 @@
+import { typed_keys } from '$lib/utilities/typed_entries';
 import type { SvelteComponent } from 'svelte';
+import { keys } from 'ts-transformer-keys';
 
-const position_keys = ['x', 'y'] as const;
-
-export type vector = Record<typeof position_keys[number], number>;
+export interface vector {
+	x: number;
+	y: number;
+}
 
 export type connector_types = 'in' | 'out';
 
@@ -26,7 +29,7 @@ export interface passed_data {
 }
 
 export interface internal_data {
-	update_fn: (name?: string) => void;
+	update_fn: (name?: string, type?: connector_types | 'both') => void;
 	connectors: Record<string, connector>;
 	drag_value: number;
 	paths: Record<string, Record<string, string>>;
@@ -42,5 +45,5 @@ export interface item_type<Props extends Record<string, unknown> = Record<string
 	component: typeof SvelteComponent;
 	position?: vector;
 	props?: Props;
-	connections?: Record<string, Set<connector_identifier<'in'>>>;
+	connections?: Record<string, Set<connector_identifier<'in'> | vector>>;
 }

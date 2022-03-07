@@ -11,6 +11,12 @@
 	export let data: passed_data;
 </script>
 
+<p>
+	{data.index}
+	{data.internal.drag_value}
+	{JSON.stringify(data.current_item.connections)}
+	{!(data.internal.drag_value <= 0) === true}
+</p>
 <div class="main">
 	<div class="side">
 		{#each typed_entries(inputs) as [name, value]}
@@ -39,6 +45,7 @@
 	}
 	p {
 		margin: 0px;
+		color: white;
 	}
 	.main > div {
 		display: flex;

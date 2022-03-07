@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { browser } from '$app/env';
-	import { onDestroy } from 'svelte';
-
 	import type { input_types } from './default_node/pass_value';
 	import Interactive from './interactive.svelte';
 	import type { vector, connector_identifier, passed_data } from './types/item';
@@ -24,6 +21,15 @@
 		const rect = element.getBoundingClientRect();
 		return get_relative_to_renderer(rect);
 	}
+	function during_drag(event: DragEvent) {
+		if (last_drag_position) {
+			data?.current_item?.connections?.[name]?.delete?.(last_drag_position);
+		}
+		data?.current_item?.connections?.[name]?.add?.(
+			get_relative_to_renderer({ x: event.pageX, y: event.pageY })
+		);
+		data.internal.update_fn(name, 'out');
+	}
 
 	function dragstart(event: DragEvent) {
 		if (event.dataTransfer) {
@@ -33,15 +39,14 @@
 
 	$: data.internal.connectors[name] = { locator: locator, direction: direction };
 	let self_data: connector_identifier;
+	let last_drag_position: vector;
 	$: self_data = { index: data.index, name: name, type: 'out' };
 </script>
 
 <Interactive bind:data>
 	<div
 		class="draggable"
-		on:drag={() => {
-			data.internal.update_fn();
-		}}
+		on:drag={during_drag}
 		draggable={true}
 		bind:this={element}
 		on:dragstart={dragstart}

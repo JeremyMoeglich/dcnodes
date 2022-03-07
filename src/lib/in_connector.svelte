@@ -38,7 +38,7 @@
 			connections[drop_data.name] = set_add(connections[drop_data.name], self_data);
 		}
 		data.items[drop_data.index].connections = connections;
-		data.internal.update_fn();
+		data.internal.update_fn(name, 'in');
 	}
 
 	data.internal.connectors[name] = { locator: locator, direction: direction };
