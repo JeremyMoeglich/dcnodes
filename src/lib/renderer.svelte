@@ -10,25 +10,16 @@
 		connector_types,
 		node_identifier
 	} from './types/item';
-	import { typed_entries, typed_from_entries } from './utilities/typed_entries';
-
+	import {
+		typed_keys,
+		typed_from_entries,
+		typed_entries,
+		map_values,
+		map_entries
+	} from 'functional-utilities';
 	export let items: Record<number, item_type>;
 
 	export let default_drag = true;
-
-	function map_values<K extends PropertyKey, V, NV>(
-		obj: Record<K, V>,
-		func: (v: V) => NV
-	): Record<K, NV> {
-		return typed_from_entries(typed_entries(obj).map(([k, v]) => [k, func(v)]));
-	}
-
-	function map_entries<K extends PropertyKey, V, NK extends PropertyKey, NV>(
-		obj: Record<K, V>,
-		func: (entries: [K, V]) => [NK, NV]
-	): Record<NK, NV> {
-		return typed_from_entries(typed_entries(obj).map((entry) => func(entry)));
-	}
 
 	function direction_to_offset(direction: vector, absolute_position: vector): vector {
 		return {
@@ -38,10 +29,10 @@
 	}
 
 	function calculate_connection(start: connector, end: connector): string {
-		const start_position = start.locator();
-		const start_offset = direction_to_offset(start.direction, start_position);
-		const end_position = end.locator();
-		const end_offset = direction_to_offset(end.direction, end_position);
+		const start_position = start.get_location();
+		const start_offset = direction_to_offset(start.get_direction(), start_position);
+		const end_position = end.get_location();
+		const end_offset = direction_to_offset(end.get_direction(), end_position);
 		return `M ${start_position.x} ${start_position.y} C ${start_offset.x} ${start_offset.y}, ${end_offset.x} ${end_offset.y}, ${end_position.x} ${end_position.y}`;
 	}
 
@@ -149,7 +140,7 @@
 		</svg>
 	</div>
 	<div class="nodes">
-		{#each Object.values(datas) as data}
+		{#each typed_keys(datas) as data}
 			<div
 				class="item"
 				use:draggable={{

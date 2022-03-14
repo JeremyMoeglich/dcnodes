@@ -15,7 +15,7 @@
 		}
 	};
 
-	const items: Record<number, item_type<{ inputs: io_type; outputs: io_type }>> = {
+	const items = {
 		0: { component: DefaultNode, props: test_io, position: { x: 200, y: 300 } },
 		1: { component: DefaultNode, position: { x: 0, y: 400 }, props: test_io },
 		2: { component: DefaultNode, position: { x: 300, y: 200 }, props: test_io }
