@@ -5,28 +5,23 @@ export interface vector {
 	y: number;
 }
 
-export type connector_types = 'in' | 'out';
+export type connector_types = 'start' | 'end';
 export type connection_name = string;
-export type node_identifier = number;
-export type node_connections = Record<string, Set<connector_identifier<'in'> | vector>>;
+export type node_identifier = number | string;
+export type node_connections = Record<string, Set<connector_identifier<'end'> | vector>>;
 
 export interface connector {
 	position: vector;
 	direction: vector;
 }
 
-export interface readonly_connector_refrence {
+export interface connector_refrence {
 	get_location: () => vector;
 	get_direction: () => vector;
 }
 
-export interface connector_refrence extends readonly_connector_refrence {
-	set_location: (v: vector) => void;
-	set_direction: (v: vector) => void;
-}
-
 export interface connector_identifier<T extends connector_types = connector_types> {
-	index: node_identifier;
+	id: node_identifier;
 	name: string;
 	type: T;
 }
@@ -47,6 +42,9 @@ export interface item_type_refrence<
 	set_position: (v: vector) => void;
 	get_props: () => Props;
 	get_node_connections: () => node_connections;
+	remove_node_connection: (name: string, to?: connector_identifier<'end'> | vector) => void;
+	add_node_connection: (name: string, to: connector_identifier<'end'> | vector) => void;
+	set_node_connections: (connections: node_connections) => void;
 }
 
 export interface parent_info {
@@ -54,11 +52,13 @@ export interface parent_info {
 }
 
 export interface persistent_data<N extends node_identifier = node_identifier> {
-	readonly index: N;
+	readonly id: N;
 	item: item_type;
 	svg_paths: Record<string, Record<string, string>>;
 	drag_value: number;
 	connectors: Record<string, connector_refrence>;
+	values: Record<string, unknown>;
+	on_change: () => void
 }
 
 export interface data<N extends node_identifier = node_identifier> extends persistent_data<N> {
@@ -74,14 +74,16 @@ export type persistent_datas<N extends node_identifier = node_identifier> = Reco
 export type datas_refrence = Record<node_identifier, data_refrence>;
 
 export interface data_refrence {
-	readonly index: number;
+	readonly id: node_identifier;
 	get_current_item_refrence: () => item_type_refrence;
 	get_current_item: () => item_type;
 	set_current_item: (item: item_type) => void;
 	update_connections: (name?: string, type?: connector_types | 'both') => void;
 	get_connectors: () => Record<string, connector_refrence>;
+	set_connector: (name: string, value: connector_refrence) => void;
 	_get_drag_value: () => number;
 	_set_drag_value: (v: number) => void;
+	set_on_change: (func: () => void) => void
 	get_svg_paths: () => Record<string, Record<string, string>>;
 	get_parent_info: () => parent_info;
 	get_items: () => Record<node_identifier, item_type_refrence>;

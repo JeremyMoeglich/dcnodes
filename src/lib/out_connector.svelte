@@ -14,7 +14,7 @@
 		return { x: position.x - parent_position.x, y: position.y - parent_position.y };
 	}
 
-	function locator(): vector {
+	function get_location(): vector {
 		if (element === undefined) {
 			return { x: 0, y: 0 };
 		}
@@ -23,16 +23,11 @@
 	}
 	function during_drag(event: DragEvent) {
 		if (last_drag_position) {
-			data
-				.get_current_item_refrence()
-				?.get_node_connections()
-				?.[name]?.delete?.(last_drag_position);
+			data.get_current_item_refrence().remove_node_connection(name, last_drag_position);
 		}
 		data
 			.get_current_item_refrence()
-			.get_node_connections()
-			?.[name]?.add?.(get_relative_to_renderer({ x: event.pageX, y: event.pageY }));
-		data.internal.update_fn(name, 'out');
+			.add_node_connection(name, get_relative_to_renderer({ x: event.pageX, y: event.pageY }));
 	}
 
 	function dragstart(event: DragEvent) {
@@ -41,10 +36,10 @@
 		}
 	}
 
-	$: data.internal.connectors[name] = { locator: locator, direction: direction };
+	$: data.set_connector(name, { get_location: get_location, get_direction: () => direction });
 	let self_data: connector_identifier;
 	let last_drag_position: vector;
-	$: self_data = { index: data.index, name: name, type: 'out' };
+	$: self_data = { id: data.id, name: name, type: 'start' };
 </script>
 
 <Interactive bind:data>

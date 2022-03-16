@@ -8,10 +8,7 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
-		adapter: adapter(),
-		vite: {
-			plugins: ['babel-plugin-ts-validate-type']
-		}
+		adapter: adapter()
 	}
 };
 

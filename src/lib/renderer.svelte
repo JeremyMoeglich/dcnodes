@@ -10,21 +10,29 @@
 		item_type_refrence,
 		node_identifier,
 		persistent_datas,
-		readonly_connector_refrence,
-		vector
+		vector,
+		node_connections
 	} from './types/item';
-	import { typed_entries, map_values, map_entries, zip } from 'functional-utilities';
-	import type { SvelteComponent } from 'svelte';
+	import { typed_entries, map_values, map_entries, cover } from 'functional-utilities';
+	import { SvelteComponent } from 'svelte';
 	import { omit } from 'lodash-es';
-	export let items: Record<node_identifier, item_type>;
-	const datas: persistent_datas = map_entries(items, ([k, item]) => [
+	export let items: Record<node_identifier, Partial<item_type> & Pick<item_type, 'component'>>;
+	const complete_items: Record<node_identifier, item_type> = map_values(items, (item) =>
+		cover(
+			{ component: SvelteComponent, node_connections: {}, position: { x: 0, y: 0 }, props: {} },
+			item
+		)
+	);
+	const datas: persistent_datas = map_entries(complete_items, ([k, item]) => [
 		k,
 		{
-			index: k,
+			id: k,
 			item: item,
 			svg_paths: {},
 			drag_value: 0,
-			connectors: {}
+			connectors: {},
+			values: {},
+			on_change: () => {}
 		}
 	]);
 	export let default_drag = true;
@@ -37,10 +45,7 @@
 		};
 	}
 
-	function calculate_connection(
-		start: readonly_connector_refrence,
-		end: readonly_connector_refrence
-	): string {
+	function calculate_connection(start: connector_refrence, end: connector_refrence): string {
 		const start_position = start.get_location();
 		const start_offset = direction_to_offset(start.get_direction(), start_position);
 		const end_position = end.get_location();
@@ -52,15 +57,15 @@
 		output: connector_identifier<'out'>,
 		input: connector_identifier<'in'> | vector
 	) {
-		const start: connector_refrence = datas[output.index].connectors[output.name];
-		const end: readonly_connector_refrence =
+		const start: connector_refrence = datas[output.id].connectors[output.name];
+		const end: connector_refrence =
 			'x' in input
 				? {
 						get_direction: () => map_values(start.get_direction(), (v) => v * -1),
 						get_location: () => input
 				  }
-				: datas[input.index].connectors[input.name];
-		datas[output.index].svg_paths[output.name][JSON.stringify(input)] = calculate_connection(
+				: datas[input.id].connectors[input.name];
+		datas[output.id].svg_paths[output.name][JSON.stringify(input)] = calculate_connection(
 			start,
 			end
 		);
@@ -71,12 +76,12 @@
 		name?: string,
 		type: connector_types | 'both' = 'both'
 	) {
-		const connections = items[id].node_connections ?? {};
+		const connections = complete_items[id].node_connections ?? {};
 		const connections_to_update = name
-			? [[name, connections[name]] as [string, Set<connector_identifier<'in'>>]]
+			? [[name, connections[name]] as [string, Set<connector_identifier<'end'>>]]
 			: typed_entries(connections);
 		//console.log(connections_to_update)
-		if (type === 'in' || type === 'both') {
+		if (type === 'end' || type === 'both') {
 			connections_to_update.map(([k, connector]) => {
 				back_connections[id][k].forEach((identifier) => {
 					connector.forEach((out_identifier) => {
@@ -85,67 +90,106 @@
 				});
 			});
 		}
-		if (type === 'out' || type === 'both') {
+		if (type === 'start' || type === 'both') {
 			datas[id].svg_paths = {};
 			connections_to_update.map(([k, connector]) => {
 				datas[id].svg_paths[k] ??= {};
 				connector.forEach((identifier) => {
 					if (!('x' in identifier)) {
-						((back_connections?.[identifier.index] ?? {})?.[identifier.name] ?? new Set()).add({
-							index: id,
+						((back_connections?.[identifier.id] ?? {})?.[identifier.name] ?? new Set()).add({
+							id: id,
 							name: k,
 							type: 'out'
 						});
 					}
-					update_single_connection({ index: id, name: k, type: 'out' }, identifier);
+					update_single_connection({ id: id, name: k, type: 'out' }, identifier);
 				});
 			});
 		}
+		datas[id].on_change();
+	}
+	function add_connection(in_node: connector_identifier<'start'>, out_node: connector_identifier<'end'> | vector): void {
+		datas[in_node.id].item.node_connections[in_node.name].add(out_node);
 	}
 
 	function refrence_item(i: node_identifier): item_type_refrence {
+		const data = datas[i];
 		return {
-			get_component: () => datas[i].item.component,
-			get_node_connections: () => datas[i].item.node_connections,
-			get_position: () => datas[i].item.position,
-			get_props: () => datas[i].item.props,
+			get_component: () => data.item.component,
+			get_node_connections: () => data.item.node_connections,
+			get_position: () => data.item.position,
+			get_props: () => data.item.props,
 			set_component: (component: typeof SvelteComponent) => {
-				datas[i].item.component = component;
+				data.item.component = component;
+				update_connection(i);
 			},
 			set_position: (v: vector) => {
-				datas[i].item.position = v;
+				data.item.position = v;
+				update_connection(i);
+			},
+			set_node_connections: (connections: node_connections) => {
+				data.item.node_connections = connections;
+				update_connection(i, undefined, 'in');
+			},
+			add_node_connection: (name: string, to: connector_identifier<'in'> | vector) => {
+				data.item.node_connections[name].add(to);
+				update_connection(i, name, 'in');
+			},
+			remove_node_connection: (name: string, to?: connector_identifier<'in'> | vector) => {
+				if (to) {
+					data.item.node_connections[name].delete(to);
+					update_connection(i, name, 'in');
+				} else {
+					delete data.item.node_connections[name];
+					update_connection(i, name, 'in');
+				}
 			}
 		};
 	}
 
-	const items_refrence: Record<number, item_type_refrence<Record<string, unknown>>> = map_entries(
-		items,
-		([i]) => [i, refrence_item(i)]
-	);
+	const items_refrence: Record<
+		node_identifier,
+		item_type_refrence<Record<string, unknown>>
+	> = map_entries(complete_items, ([i]) => [i, refrence_item(i)]);
+
+	function get_container_position(): vector {
+		return container === undefined
+			? { x: 0, y: 0 }
+			: omit(container.getBoundingClientRect(), ['height', 'width']);
+	}
 
 	function refrence_data(i: node_identifier): data_refrence {
+		const data = datas[i];
 		return {
-			index: i,
+			id: i,
 			get_current_item_refrence: () => items_refrence[i],
-			_get_drag_value: () => datas[i].drag_value,
+			_get_drag_value: () => data.drag_value,
 			_set_drag_value: (v: number) => {
-				datas[i].drag_value = v;
+				data.drag_value = v;
+				data.on_change();
 			},
-			get_connectors: () => datas[i].connectors,
-			get_current_item: () => datas[i].item,
+			get_connectors: () => data.connectors,
+			set_connector: (name: string, value: connector_refrence) => {
+				data.connectors[name] = value;
+				update_connection(i, name, 'in');
+			},
+			get_current_item: () => data.item,
 			get_items: () => items_refrence,
 			get_parent_info: () => ({
-				position:
-					container === undefined
-						? { x: 0, y: 0 }
-						: omit(container.getBoundingClientRect(), ['height', 'width'])
+				position: get_container_position()
 			}),
-			get_svg_paths: () => datas[i].svg_paths,
+			get_svg_paths: () => data.svg_paths,
 			set_current_item: (item: item_type) => {
-				datas[i].item = item;
+				data.item = item;
+				update_connection(i);
 			},
 			update_connections: (name?: string, type?: connector_types | 'both') => {
 				update_connection(i, name, type);
+			},
+			set_on_change: (func: () => void) => {
+				data.on_change = () => {
+					func();
+				};
 			}
 		};
 	}
@@ -167,10 +211,13 @@
 	</div>
 	<div class="nodes">
 		{#each Object.values(datas) as data}
-			{@const i = data.index}
+			{@const i = data.id}
 			{@const data_refrence = datas_refrence[i]}
 			<div
 				class="item"
+				on:resize={() => {
+					data_refrence.update_connections();
+				}}
 				use:draggable={{
 					position: data.item.position,
 					disabled: !(data.drag_value <= 0) === default_drag,
@@ -180,7 +227,7 @@
 				}}
 			>
 				<p>
-					{data.index}
+					{data.id}
 					{data.drag_value}
 					{JSON.stringify(data.item.node_connections)}
 					{!(data.drag_value <= 0) === true}
@@ -208,10 +255,6 @@
 		height: 100%;
 		top: 0px;
 		left: 0px;
-	}
-	.debug {
-		position: absolute;
-		color: white;
 	}
 	.item {
 		position: absolute;
