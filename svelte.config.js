@@ -10,9 +10,7 @@ const config = {
 	kit: {
 		adapter: adapter(),
 		vite: {
-			plugins: [
-				'babel-plugin-ts-validate-type'
-			]
+			plugins: ['babel-plugin-ts-validate-type']
 		}
 	}
 };

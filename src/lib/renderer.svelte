@@ -1,15 +1,7 @@
 <script lang="ts">
 	import { omit } from 'lodash-es';
 	import { draggable } from '@neodrag/svelte';
-	import type {
-		item_type,
-		vector,
-		connector,
-		passed_data,
-		connector_identifier,
-		connector_types,
-		node_identifier
-	} from './types/item';
+	import type { connector_identifier, connector_refrence, item_type, node_identifier, vector } from './types/item';
 	import {
 		typed_keys,
 		typed_from_entries,
@@ -17,8 +9,8 @@
 		map_values,
 		map_entries
 	} from 'functional-utilities';
-	export let items: Record<number, item_type>;
-
+	export let items: Record<node_identifier, item_type>;
+	
 	export let default_drag = true;
 
 	function direction_to_offset(direction: vector, absolute_position: vector): vector {
@@ -28,7 +20,7 @@
 		};
 	}
 
-	function calculate_connection(start: connector, end: connector): string {
+	function calculate_connection(start: connector_refrence, end: connector_refrence): string {
 		const start_position = start.get_location();
 		const start_offset = direction_to_offset(start.get_direction(), start_position);
 		const end_position = end.get_location();
@@ -86,44 +78,6 @@
 				});
 			});
 		}
-	}
-
-	let container: HTMLElement | undefined;
-	let datas: Record<node_identifier, passed_data>;
-	$: {
-		const position: vector =
-			container === undefined
-				? { x: 0, y: 0 }
-				: omit(container.getBoundingClientRect(), ['height', 'width']);
-		map_values(items, (item) => {
-			item.position ??= { x: 0, y: 0 };
-			item.connections ??= {};
-		});
-		datas = map_entries(items, ([k, item]) => [
-			k,
-			{
-				internal: {
-					update_fn: (name?: string, type: connector_types | 'both' = 'both') => {
-						update_connection(k, name, type);
-					},
-					id: k,
-					drag_value:
-						datas?.[k]?.internal?.drag_value ??
-						(() => {
-							console.debug('overwrite', datas?.[k]?.internal?.drag_value);
-							return 0;
-						})(),
-					connectors: datas?.[k]?.internal
-						? datas?.[k]?.internal.connectors
-						: ({} as Record<string, connector>),
-					paths: datas?.[k].internal?.paths ?? {}
-				},
-				items: items,
-				current_item: item,
-				index: k,
-				parent_info: { position: position }
-			}
-		]);
 	}
 </script>
 
