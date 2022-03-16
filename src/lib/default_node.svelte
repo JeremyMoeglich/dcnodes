@@ -1,27 +1,26 @@
 <script lang="ts">
-	import type { passed_data } from '$lib/types/item';
-
 	import InConnector from './in_connector.svelte';
 	import OutConnector from './out_connector.svelte';
 	import type { io_type } from './default_node/pass_value';
 	import { typed_entries } from './utilities/typed_entries';
+	import type { data_refrence } from './types/item';
 
 	export let inputs: io_type;
 	export let outputs: io_type;
-	export let data: passed_data;
+	export let data: data_refrence;
 </script>
 
 <p>
 	{data.index}
-	{data.internal.drag_value}
-	{JSON.stringify(data.current_item.connections)}
-	{!(data.internal.drag_value <= 0) === true}
+	{data._get_drag_value()}
+	{JSON.stringify(data.get_current_item().node_connections)}
+	{!(data._get_drag_value() <= 0) === true}
 </p>
 <div class="main">
 	<div class="side">
 		{#each typed_entries(inputs) as [name, value]}
 			<div>
-				<InConnector direction={{ x: -1, y: 0 }} bind:value={value.value} {name} bind:data />
+				<InConnector direction={{ x: -1, y: 0 }} bind:value={value.value} {name} {data} />
 				<p>{name}</p>
 			</div>
 		{/each}
@@ -31,7 +30,7 @@
 		{#each typed_entries(outputs) as [name, value]}
 			<div>
 				<p>{name}</p>
-				<OutConnector direction={{ x: 1, y: 0 }} bind:value={value.value} {name} bind:data />
+				<OutConnector direction={{ x: 1, y: 0 }} bind:value={value.value} {name} {data} />
 			</div>
 		{/each}
 	</div>
