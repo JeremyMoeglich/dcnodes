@@ -13,7 +13,7 @@
 		return { x: position.x - parent_position.x, y: position.y - parent_position.y };
 	}
 
-	function get_location(): vector {
+	function get_position(): vector {
 		if (element === undefined) {
 			return { x: 0, y: 0 };
 		}
@@ -35,7 +35,7 @@
 		}
 	}
 
-	$: data.set_connector(name, { get_location: get_location, get_direction: () => direction });
+	data.set_connector(name, { get_location: get_position, get_direction: () => direction });
 	let self_data: connector_identifier;
 	let last_drag_position: vector;
 	$: self_data = { id: data.id, name: name, type: 'start' };
@@ -44,7 +44,7 @@
 		data
 			.get_current_item_refrence()
 			.get_node_connections()
-			[name].forEach((v) => {
+			?.[name]?.forEach?.((v) => {
 				if ('x' in v) {
 					return;
 				}

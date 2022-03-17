@@ -16,6 +16,7 @@
 	import { typed_entries, map_values, map_entries, cover } from 'functional-utilities';
 	import { SvelteComponent } from 'svelte';
 	import { omit } from 'lodash-es';
+	import { noop } from 'lodash-es';
 	export let items: Record<node_identifier, Partial<item_type> & Pick<item_type, 'component'>>;
 	const complete_items: Record<node_identifier, item_type> = map_values(items, (item) =>
 		cover(
@@ -32,7 +33,7 @@
 			drag_value: 0,
 			connectors: {},
 			values: {},
-			on_change: () => {}
+			on_change: noop
 		}
 	]);
 	export let default_drag = true;
@@ -76,10 +77,12 @@
 		name?: string,
 		type: connector_types | 'both' = 'both'
 	) {
-		const connections = complete_items[id].node_connections ?? {};
-		const connections_to_update = name
-			? [[name, connections[name]] as [string, Set<connector_identifier<'end'>>]]
-			: typed_entries(connections);
+		const connections = datas[id].item.node_connections ?? {};
+		const connections_to_update = (
+			name
+				? [[name, connections[name]] as [string, Set<connector_identifier<'end'>>]]
+				: typed_entries(connections)
+		).filter((connection) => connection[1] !== undefined);
 		//console.log(connections_to_update)
 		if (type === 'end' || type === 'both') {
 			connections_to_update.map(([k, connector]) => {
@@ -201,12 +204,17 @@
 				};
 			},
 			_send_value: (value: unknown, connector_identifier: connector_identifier<'end'>) => {
-				
+				const refrence = datas[connector_identifier.id].connectors[connector_identifier.name];
+				if ('set_value' in refrence) {
+					refrence.set_value(value);
+				} else {
+					console.error('receiver identifier expected got normal identifier');
+				}
 			}
 		};
 	}
 
-	const datas_refrence: datas_refrence = map_entries(datas, ([i]) => [i, refrence_data(i)]);
+	const datas_refrence_obj: datas_refrence = map_entries(datas, ([i]) => [i, refrence_data(i)]);
 </script>
 
 <div class="main" bind:this={container}>
@@ -224,17 +232,17 @@
 	<div class="nodes">
 		{#each Object.values(datas) as data}
 			{@const i = data.id}
-			{@const data_refrence = datas_refrence[i]}
+			{@const data_refrence_obj = datas_refrence_obj[i]}
 			<div
 				class="item"
 				on:resize={() => {
-					data_refrence.update_connections();
+					data_refrence_obj.update_connections();
 				}}
 				use:draggable={{
 					position: data.item.position,
 					disabled: !(data.drag_value <= 0) === default_drag,
 					onDrag: ({ offsetX, offsetY }) => {
-						data_refrence.get_current_item_refrence().set_position({ x: offsetX, y: offsetY });
+						data_refrence_obj.get_current_item_refrence().set_position({ x: offsetX, y: offsetY });
 					}
 				}}
 			>
@@ -247,7 +255,7 @@
 				<svelte:component
 					this={data.item.component}
 					{...data.item.props ?? {}}
-					data={data_refrence}
+					data={data_refrence_obj}
 				/>
 			</div>
 		{/each}

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { noop } from 'lodash-es';
+
 	import Interactive from './interactive.svelte';
 	import type {
 		vector,
@@ -11,6 +13,7 @@
 	export let value: unknown;
 	export let name: string;
 	export let direction: vector;
+	export let on_value_change: () => void = noop;
 	let element: HTMLElement | undefined;
 
 	function get_relative_to_renderer(position: vector): vector {
@@ -44,8 +47,15 @@
 		}
 		drop_item_refrence.set_node_connections(connections);
 	}
+	$: data.set_connector(name, {
+		get_location: get_position,
+		get_direction: () => direction,
+		set_value: (v) => {
+			value = v;
+			on_value_change();
+		}
+	});
 
-	data.set_connector(name, { get_location: get_position, get_direction: () => direction });
 	let self_data: connector_identifier<'end'>;
 	$: self_data = { id: data.id, name: name, type: 'end' };
 </script>
