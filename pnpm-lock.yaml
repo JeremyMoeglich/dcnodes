@@ -8,11 +8,10 @@ specifiers:
   '@types/lodash-es': ^4.17.6
   '@typescript-eslint/eslint-plugin': ^5.15.0
   '@typescript-eslint/parser': ^5.15.0
-  babel-plugin-ts-validate-type: ^0.1.1
   eslint: ^7.32.0
   eslint-config-prettier: ^8.5.0
   eslint-plugin-svelte3: ^3.4.1
-  functional-utilities: ^1.5.1
+  functional-utilities: ^1.6.0
   lodash-es: ^4.17.21
   prettier: ^2.6.0
   prettier-plugin-svelte: ^2.6.0
@@ -28,16 +27,15 @@ dependencies:
   '@neodrag/svelte': 1.1.3
   '@sveltejs/adapter-static': 1.0.0-next.29
   '@types/lodash-es': 4.17.6
-  functional-utilities: 1.5.1
+  functional-utilities: 1.6.0
   lodash-es: 4.17.21
   svelte-watch-resize: 1.0.3
 
 devDependencies:
   '@sveltejs/adapter-auto': 1.0.0-next.33
-  '@sveltejs/kit': 1.0.0-next.298_svelte@3.46.4
+  '@sveltejs/kit': 1.0.0-next.299_svelte@3.46.4
   '@typescript-eslint/eslint-plugin': 5.15.0_5400bdff049a1444f15d03ace6195cd2
   '@typescript-eslint/parser': 5.15.0_eslint@7.32.0+typescript@4.6.2
-  babel-plugin-ts-validate-type: 0.1.1
   eslint: 7.32.0
   eslint-config-prettier: 8.5.0_eslint@7.32.0
   eslint-plugin-svelte3: 3.4.1_eslint@7.32.0+svelte@3.46.4
@@ -175,8 +173,8 @@ packages:
       esbuild: 0.14.27
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.298_svelte@3.46.4:
-    resolution: {integrity: sha512-HUna2KgBc9NdeSCAqZBo6NUuRHab1tRMW6O3OtLvPs7ldSY+cEarDmUJb1ZeHwPrbcS2RTHSnBNNc0l+UyiFIw==}
+  /@sveltejs/kit/1.0.0-next.299_svelte@3.46.4:
+    resolution: {integrity: sha512-m8VBccfX3ozgHjjz193pZbfTK02P47bqdhj07cveUEhVLwbujOVWbgblPCrNh0rkTER7z1k5hRZnWrFYaDjQJA==}
     engines: {node: '>=14.13'}
     hasBin: true
     peerDependencies:
@@ -216,8 +214,8 @@ packages:
       - supports-color
     dev: true
 
-  /@types/json-schema/7.0.9:
-    resolution: {integrity: sha512-qcUXuemtEu+E5wZSJHNxUXeCZhAfXKQ41D+duX+VYPde7xyEVZci+/oXKJL13tnRs9lR2pr4fod59GT6/X1/yQ==}
+  /@types/json-schema/7.0.10:
+    resolution: {integrity: sha512-BLO9bBq59vW3fxCpD4o0N4U+DXsvwvIcl+jofw0frQo/GrBFC+/jRZj1E7kgp6dvTyNmA4y6JCV5Id/r3mNP5A==}
     dev: true
 
   /@types/lodash-es/4.17.6:
@@ -350,7 +348,7 @@ packages:
     peerDependencies:
       eslint: ^6.0.0 || ^7.0.0 || ^8.0.0
     dependencies:
-      '@types/json-schema': 7.0.9
+      '@types/json-schema': 7.0.10
       '@typescript-eslint/scope-manager': 5.15.0
       '@typescript-eslint/types': 5.15.0
       '@typescript-eslint/typescript-estree': 5.15.0_typescript@4.6.2
@@ -448,12 +446,6 @@ packages:
   /astral-regex/2.0.0:
     resolution: {integrity: sha512-Z7tMw1ytTXt5jqMcOP+OQteU1VuNK9Y02uuJtKQ1Sv69jXQKKg5cibLwGJow8yzZP+eAc18EmLGPal0bp36rvQ==}
     engines: {node: '>=8'}
-    dev: true
-
-  /babel-plugin-ts-validate-type/0.1.1:
-    resolution: {integrity: sha512-A4h3E/8aAIWOtEwJ5xfuEZ4dR0AleKlwDXgieLIvpAaXkky0swt45vSXywiQ9zNdyre8BCJ30iMq2pMGbBoeew==}
-    peerDependencies:
-      ts-validate-type: 0.1.x
     dev: true
 
   /balanced-match/1.0.2:
@@ -1068,8 +1060,8 @@ packages:
     resolution: {integrity: sha1-GwqzvVU7Kg1jmdKcDj6gslIHgyc=}
     dev: true
 
-  /functional-utilities/1.5.1:
-    resolution: {integrity: sha512-Y2NCMkbJQrsmdMDevgpqQIHsJT/Tagv4lBmS+MC8sm5p5oNgI+K7DapKSR4sCtx074omB1IdGwofdtNzr9IArw==}
+  /functional-utilities/1.6.0:
+    resolution: {integrity: sha512-wu4sZEq8fdNHONrZc1GrHjs/BKKkFWRpqKPoQ7EeG0UB5SwMF5bP1u2C7s0CaCvTsWfbzTM5zVmk3PaM1pTR+Q==}
     dependencies:
       lodash-es: 4.17.21
     dev: false

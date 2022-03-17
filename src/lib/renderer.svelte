@@ -54,8 +54,8 @@
 	}
 
 	function update_single_connection(
-		output: connector_identifier<'out'>,
-		input: connector_identifier<'in'> | vector
+		output: connector_identifier<'start'>,
+		input: connector_identifier<'end'> | vector
 	) {
 		const start: connector_refrence = datas[output.id].connectors[output.name];
 		const end: connector_refrence =
@@ -70,7 +70,7 @@
 			end
 		);
 	}
-	let back_connections: Record<node_identifier, Record<string, Set<connector_identifier<'out'>>>>;
+	let back_connections: Record<node_identifier, Record<string, Set<connector_identifier<'start'>>>>;
 	function update_connection(
 		id: node_identifier,
 		name?: string,
@@ -99,17 +99,28 @@
 						((back_connections?.[identifier.id] ?? {})?.[identifier.name] ?? new Set()).add({
 							id: id,
 							name: k,
-							type: 'out'
+							type: 'start'
 						});
 					}
-					update_single_connection({ id: id, name: k, type: 'out' }, identifier);
+					update_single_connection({ id: id, name: k, type: 'start' }, identifier);
 				});
 			});
 		}
 		datas[id].on_change();
 	}
-	function add_connection(in_node: connector_identifier<'start'>, out_node: connector_identifier<'end'> | vector): void {
+	function add_connection(
+		in_node: connector_identifier<'start'>,
+		out_node: connector_identifier<'end'> | vector
+	): void {
 		datas[in_node.id].item.node_connections[in_node.name].add(out_node);
+		update_connection(in_node.id, in_node.name, 'end');
+	}
+	function remove_connection(
+		in_node: connector_identifier<'start'>,
+		out_node: connector_identifier<'end'> | vector
+	): void {
+		datas[in_node.id].item.node_connections[in_node.name].delete(out_node);
+		update_connection(in_node.id, in_node.name, 'end');
 	}
 
 	function refrence_item(i: node_identifier): item_type_refrence {
@@ -129,19 +140,17 @@
 			},
 			set_node_connections: (connections: node_connections) => {
 				data.item.node_connections = connections;
-				update_connection(i, undefined, 'in');
+				update_connection(i, undefined, 'end');
 			},
-			add_node_connection: (name: string, to: connector_identifier<'in'> | vector) => {
-				data.item.node_connections[name].add(to);
-				update_connection(i, name, 'in');
+			add_node_connection: (name: string, to: connector_identifier<'end'> | vector) => {
+				add_connection({ id: i, name: name, type: 'start' }, to);
 			},
-			remove_node_connection: (name: string, to?: connector_identifier<'in'> | vector) => {
+			remove_node_connection: (name: string, to?: connector_identifier<'end'> | vector) => {
 				if (to) {
-					data.item.node_connections[name].delete(to);
-					update_connection(i, name, 'in');
+					remove_connection({ id: i, name: name, type: 'start' }, to);
 				} else {
 					delete data.item.node_connections[name];
-					update_connection(i, name, 'in');
+					update_connection(i, name, 'end');
 				}
 			}
 		};
@@ -171,7 +180,7 @@
 			get_connectors: () => data.connectors,
 			set_connector: (name: string, value: connector_refrence) => {
 				data.connectors[name] = value;
-				update_connection(i, name, 'in');
+				update_connection(i, name, 'end');
 			},
 			get_current_item: () => data.item,
 			get_items: () => items_refrence,
@@ -190,6 +199,9 @@
 				data.on_change = () => {
 					func();
 				};
+			},
+			_send_value: (value: unknown, connector_identifier: connector_identifier<'end'>) => {
+				
 			}
 		};
 	}

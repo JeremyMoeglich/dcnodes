@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { input_types } from './default_node/pass_value';
 	import Interactive from './interactive.svelte';
 	import type {
 		vector,
@@ -9,7 +8,7 @@
 	} from './types/item';
 
 	export let data: data_refrence;
-	export let value: input_types[keyof input_types];
+	export let value: unknown;
 	export let name: string;
 	export let direction: vector;
 	let element: HTMLElement | undefined;

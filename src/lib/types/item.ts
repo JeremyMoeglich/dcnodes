@@ -20,6 +20,10 @@ export interface connector_refrence {
 	get_direction: () => vector;
 }
 
+export interface receiver_connector_refrence extends connector_refrence {
+	set_value: (value: unknown) => void;
+}
+
 export interface connector_identifier<T extends connector_types = connector_types> {
 	id: node_identifier;
 	name: string;
@@ -56,9 +60,9 @@ export interface persistent_data<N extends node_identifier = node_identifier> {
 	item: item_type;
 	svg_paths: Record<string, Record<string, string>>;
 	drag_value: number;
-	connectors: Record<string, connector_refrence>;
+	connectors: Record<string, connector_refrence | receiver_connector_refrence>;
 	values: Record<string, unknown>;
-	on_change: () => void
+	on_change: () => void;
 }
 
 export interface data<N extends node_identifier = node_identifier> extends persistent_data<N> {
@@ -79,12 +83,13 @@ export interface data_refrence {
 	get_current_item: () => item_type;
 	set_current_item: (item: item_type) => void;
 	update_connections: (name?: string, type?: connector_types | 'both') => void;
-	get_connectors: () => Record<string, connector_refrence>;
-	set_connector: (name: string, value: connector_refrence) => void;
+	get_connectors: () => Record<string, connector_refrence | receiver_connector_refrence>;
+	set_connector: (name: string, value: connector_refrence | receiver_connector_refrence) => void;
 	_get_drag_value: () => number;
 	_set_drag_value: (v: number) => void;
-	set_on_change: (func: () => void) => void
+	set_on_change: (func: () => void) => void;
 	get_svg_paths: () => Record<string, Record<string, string>>;
 	get_parent_info: () => parent_info;
 	get_items: () => Record<node_identifier, item_type_refrence>;
+	_send_value: (value: unknown, connector_identifier: connector_identifier<'end'>) => void;
 }

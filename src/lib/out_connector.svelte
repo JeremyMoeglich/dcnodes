@@ -1,10 +1,9 @@
 <script lang="ts">
-	import type { input_types } from './default_node/pass_value';
 	import Interactive from './interactive.svelte';
 	import type { vector, connector_identifier, data_refrence } from './types/item';
 
 	export let data: data_refrence;
-	export let value: input_types[keyof input_types];
+	export let value: unknown;
 	export let name: string;
 	export let direction: vector;
 	let element: HTMLElement | undefined;
@@ -40,6 +39,20 @@
 	let self_data: connector_identifier;
 	let last_drag_position: vector;
 	$: self_data = { id: data.id, name: name, type: 'start' };
+
+	function send_value(value: unknown) {
+		data
+			.get_current_item_refrence()
+			.get_node_connections()
+			[name].forEach((v) => {
+				if ('x' in v) {
+					return;
+				}
+				data._send_value(value, v);
+			});
+	}
+
+	$: send_value(value);
 </script>
 
 <Interactive bind:data>
