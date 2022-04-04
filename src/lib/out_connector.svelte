@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
+
 	import Interactive from './interactive.svelte';
 	import type { vector, connector_identifier, data_refrence } from './types/item';
 
@@ -13,6 +15,12 @@
 		return { x: position.x - parent_position.x, y: position.y - parent_position.y };
 	}
 
+	function remove_previous_connection() {
+		if (last_drag_position) {
+			data.get_current_item_refrence().remove_node_connection(name, last_drag_position);
+		}
+	}
+
 	function get_position(): vector {
 		if (element === undefined) {
 			return { x: 0, y: 0 };
@@ -21,12 +29,10 @@
 		return get_relative_to_renderer(rect);
 	}
 	function during_drag(event: DragEvent) {
-		if (last_drag_position) {
-			data.get_current_item_refrence().remove_node_connection(name, last_drag_position);
-		}
-		data
-			.get_current_item_refrence()
-			.add_node_connection(name, get_relative_to_renderer({ x: event.pageX, y: event.pageY }));
+		remove_previous_connection();
+		const drag_position = get_relative_to_renderer({ x: event.pageX, y: event.pageY });
+		data.get_current_item_refrence().add_node_connection(name, drag_position);
+		last_drag_position = drag_position;
 	}
 
 	function dragstart(event: DragEvent) {
@@ -53,6 +59,10 @@
 	}
 
 	$: send_value(value);
+
+	onDestroy(() => {
+		remove_previous_connection();
+	});
 </script>
 
 <Interactive bind:data>
@@ -62,6 +72,7 @@
 		draggable={true}
 		bind:this={element}
 		on:dragstart={dragstart}
+		on:dragend={remove_previous_connection}
 	>
 		<div class="main" />
 	</div>

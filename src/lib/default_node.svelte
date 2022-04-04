@@ -8,20 +8,7 @@
 	export let inputs: io_type;
 	export let outputs: io_type;
 	export let data: data_refrence;
-	let change_index = 0;
-	data.set_on_change(() => {
-		change_index++;
-	});
 </script>
-
-{#key change_index}
-	<p>
-		{data.id}
-		{data._get_drag_value()}
-		{JSON.stringify(data.get_current_item().node_connections)}
-		{!(data._get_drag_value() <= 0) === true}
-	</p>
-{/key}
 
 <div class="main">
 	<div class="side">

@@ -28,26 +28,20 @@
 		const rect = element.getBoundingClientRect();
 		return get_relative_to_renderer(rect);
 	}
-	function set_add<T>(set: Set<T> | undefined, v: T): Set<T> {
-		set ??= new Set();
-		set.add(v);
-		return set;
-	}
 
 	function drop(event: DragEvent) {
 		const drop_data: connector_identifier<'start'> = JSON.parse(
 			event.dataTransfer?.getData('text/plain') ?? '{ node_id: -1, name: "invalid" }'
 		);
-		const drop_item_refrence: item_type_refrence = data.get_items()[drop_data.id];
-		const connections = drop_item_refrence.get_node_connections();
-		if (connections === undefined) {
-			throw 'connections is undefined';
-		} else {
-			connections[drop_data.name] = set_add(connections[drop_data.name], self_data);
+		if (drop_data.name === 'invalid') {
+			console.log('invalid drop');
+			return;
 		}
-		drop_item_refrence.set_node_connections(connections);
+		const drop_item_refrence: item_type_refrence = data.get_items()[drop_data.id];
+		drop_item_refrence.add_node_connection(drop_data.name, self_data);
 	}
-	$: data.set_connector(name, {
+
+	data.set_connector(name, {
 		get_location: get_position,
 		get_direction: () => direction,
 		set_value: (v) => {

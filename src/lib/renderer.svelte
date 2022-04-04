@@ -15,8 +15,8 @@
 	} from './types/item';
 	import { typed_entries, map_values, map_entries, cover } from 'functional-utilities';
 	import { SvelteComponent } from 'svelte';
-	import { omit } from 'lodash-es';
-	import { noop } from 'lodash-es';
+	import { omit, noop } from 'lodash-es';
+
 	export let items: Record<node_identifier, Partial<item_type> & Pick<item_type, 'component'>>;
 	const complete_items: Record<node_identifier, item_type> = map_values(items, (item) =>
 		cover(
@@ -72,42 +72,50 @@
 		);
 	}
 	let back_connections: Record<node_identifier, Record<string, Set<connector_identifier<'start'>>>>;
-	function update_connection(
-		id: node_identifier,
-		name?: string,
-		type: connector_types | 'both' = 'both'
-	) {
+
+	function backwards_update(id: node_identifier, name?: string) {
+		const connections = back_connections?.[id] ?? {};
+		const connections_to_update = (
+			name
+				? [[name, connections[name]] as [string, Set<connector_identifier<'start'>>]]
+				: typed_entries(connections)
+		).filter((connection) => connection[1] !== undefined);
+
+		connections_to_update.map(([k, connector]) => {
+			connector.forEach((identifier) => {
+				datas[identifier.id].svg_paths[identifier.name] ??= {};
+				update_single_connection(identifier, { id: id, name: k, type: 'end' });
+			});
+		});
+	}
+
+	function forward_update(id: node_identifier, name?: string) {
 		const connections = datas[id].item.node_connections ?? {};
 		const connections_to_update = (
 			name
 				? [[name, connections[name]] as [string, Set<connector_identifier<'end'>>]]
 				: typed_entries(connections)
 		).filter((connection) => connection[1] !== undefined);
-		//console.log(connections_to_update)
-		if (type === 'end' || type === 'both') {
-			connections_to_update.map(([k, connector]) => {
-				back_connections[id][k].forEach((identifier) => {
-					connector.forEach((out_identifier) => {
-						update_single_connection(identifier, out_identifier);
-					});
-				});
+
+		datas[id].svg_paths = {};
+		connections_to_update.map(([k, connector]) => {
+			connector.forEach((out_identifier) => {
+				datas[id].svg_paths[k] ??= {};
+				update_single_connection({ id: id, name: k, type: 'start' }, out_identifier);
 			});
+		});
+	}
+
+	function update_connection(
+		id: node_identifier,
+		name?: string,
+		type: connector_types | 'both' = 'both'
+	) {
+		if (type === 'end' || type === 'both') {
+			backwards_update(id, name);
 		}
 		if (type === 'start' || type === 'both') {
-			datas[id].svg_paths = {};
-			connections_to_update.map(([k, connector]) => {
-				datas[id].svg_paths[k] ??= {};
-				connector.forEach((identifier) => {
-					if (!('x' in identifier)) {
-						((back_connections?.[identifier.id] ?? {})?.[identifier.name] ?? new Set()).add({
-							id: id,
-							name: k,
-							type: 'start'
-						});
-					}
-					update_single_connection({ id: id, name: k, type: 'start' }, identifier);
-				});
-			});
+			forward_update(id, name);
 		}
 		datas[id].on_change();
 	}
@@ -115,15 +123,26 @@
 		in_node: connector_identifier<'start'>,
 		out_node: connector_identifier<'end'> | vector
 	): void {
+		if ('name' in out_node) {
+			back_connections ??= {};
+			back_connections[out_node.id] ??= {};
+			back_connections[out_node.id][out_node.name] ??= new Set();
+			back_connections[out_node.id][out_node.name].add(in_node);
+		}
+		datas[in_node.id].item.node_connections[in_node.name] ??= new Set([out_node]);
 		datas[in_node.id].item.node_connections[in_node.name].add(out_node);
-		update_connection(in_node.id, in_node.name, 'end');
+
+		update_connection(in_node.id, in_node.name, 'start');
 	}
 	function remove_connection(
 		in_node: connector_identifier<'start'>,
 		out_node: connector_identifier<'end'> | vector
 	): void {
+		if ('name' in out_node) {
+			back_connections[out_node.id][out_node.name].delete(in_node);
+		}
 		datas[in_node.id].item.node_connections[in_node.name].delete(out_node);
-		update_connection(in_node.id, in_node.name, 'end');
+		update_connection(in_node.id, in_node.name, 'start');
 	}
 
 	function refrence_item(i: node_identifier): item_type_refrence {
@@ -177,8 +196,8 @@
 			get_current_item_refrence: () => items_refrence[i],
 			_get_drag_value: () => data.drag_value,
 			_set_drag_value: (v: number) => {
-				data.drag_value = v;
-				data.on_change();
+				datas[i].drag_value = v;
+				datas[i].on_change();
 			},
 			get_connectors: () => data.connectors,
 			set_connector: (name: string, value: connector_refrence) => {
@@ -246,12 +265,6 @@
 					}
 				}}
 			>
-				<p>
-					{data.id}
-					{data.drag_value}
-					{JSON.stringify(data.item.node_connections)}
-					{!(data.drag_value <= 0) === true}
-				</p>
 				<svelte:component
 					this={data.item.component}
 					{...data.item.props ?? {}}
@@ -282,9 +295,5 @@
 		left: 0px;
 		width: fit-content;
 		height: fit-content;
-	}
-	p {
-		margin: 0px;
-		color: white;
 	}
 </style>
