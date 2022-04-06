@@ -14,7 +14,7 @@
 	<div class="side">
 		{#each typed_entries(inputs) as [name, value]}
 			<div>
-				<InConnector direction={{ x: -1, y: 0 }} bind:value={value.value} {name} {data} />
+				<InConnector direction={{ x: -1, y: 0 }} bind:value={value.value} {name} {data}/>
 				<p>{name}</p>
 			</div>
 		{/each}

@@ -75,6 +75,7 @@
 
 	function backwards_update(id: node_identifier, name?: string) {
 		const connections = back_connections?.[id] ?? {};
+		console.log(`connections: ${JSON.stringify(back_connections)}`)
 		const connections_to_update = (
 			name
 				? [[name, connections[name]] as [string, Set<connector_identifier<'start'>>]]
@@ -162,7 +163,7 @@
 			},
 			set_node_connections: (connections: node_connections) => {
 				data.item.node_connections = connections;
-				update_connection(i, undefined, 'end');
+				update_connection(i, undefined, 'start');
 			},
 			add_node_connection: (name: string, to: connector_identifier<'end'> | vector) => {
 				add_connection({ id: i, name: name, type: 'start' }, to);

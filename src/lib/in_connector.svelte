@@ -80,8 +80,7 @@
 			start_connectors.add(drop_data);
 			start_connectors = start_connectors;
 		} else {
-			drop_item_refrence.set_node_connections({ [drop_data.name]: new Set([self_data]) });
-			start_connectors = new Set([drop_data]);
+			
 		}
 	}
 
