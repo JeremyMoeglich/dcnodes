@@ -1,10 +1,5 @@
-export interface input_types {
-	string: string;
-	number: number;
-	other: unknown;
-	option: Array<string>;
+export interface default_node_props<I extends string, O extends string> {
+	inputs: ReadonlyArray<I>;
+	outputs: ReadonlyArray<O>;
+	fn: (values: Record<I, unknown>) => Record<O, unknown>;
 }
-export type io_type<T extends keyof input_types = keyof input_types> = Record<
-	string,
-	{ type: T; value: input_types[T] }
->;
