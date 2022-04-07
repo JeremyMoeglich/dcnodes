@@ -15,6 +15,6 @@
 	.box {
 		width: 100px;
 		height: 70px;
-        background-color: gray;
+		background-color: gray;
 	}
 </style>

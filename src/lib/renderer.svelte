@@ -13,7 +13,14 @@
 		vector,
 		node_connections
 	} from './types/item';
-	import { typed_entries, map_values, map_entries, cover, Set_delete, typed_keys } from 'functional-utilities';
+	import {
+		typed_entries,
+		map_values,
+		map_entries,
+		cover,
+		Set_delete,
+		typed_keys
+	} from 'functional-utilities';
 	import { SvelteComponent } from 'svelte';
 	import { omit, noop } from 'lodash-es';
 	import { absolute_vector, offset_position } from './utilities/rect_functions';

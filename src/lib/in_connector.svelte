@@ -114,7 +114,7 @@
 		on:drag={(event) => {
 			during_drag(event);
 		}}
-		on:dragend={(event) => {
+		on:dragend={() => {
 			remove_previous_connection();
 			dragged_start_connector = undefined;
 		}}

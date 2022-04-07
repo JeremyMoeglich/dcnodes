@@ -1,7 +1,6 @@
 <script lang="ts">
 	import DefaultNode from '$lib/default_node/default_node.svelte';
 	import type { data_refrence } from '$lib/types/item';
-	import { hasProperty } from 'functional-utilities';
 
 	function unknown_to_number(v: unknown): number | undefined {
 		if (typeof v === 'number') {

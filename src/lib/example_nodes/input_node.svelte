@@ -14,8 +14,8 @@
 
 <style>
 	.box {
-        display: flex;
-        flex-direction: row-reverse;
+		display: flex;
+		flex-direction: row-reverse;
 		width: 100px;
 		height: 70px;
 		background-color: gray;
