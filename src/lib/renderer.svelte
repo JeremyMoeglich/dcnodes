@@ -16,8 +16,38 @@
 	import { typed_entries, map_values, map_entries, cover, Set_delete } from 'functional-utilities';
 	import { SvelteComponent } from 'svelte';
 	import { omit, noop } from 'lodash-es';
+	import { typed_keys } from './utilities/typed_entries';
+	import { absolute_vector, offset_position } from './utilities/rect_functions';
 
 	export let items: Record<node_identifier, Partial<item_type> & Pick<item_type, 'component'>>;
+	export const refrence = {
+		items: items,
+		get_data_refrence: (id: node_identifier) => refrence_data(id),
+		get_data: (id: node_identifier) => datas[id],
+		get_item_refrence: (id: node_identifier) => refrence_item(id),
+		get_item: (id: node_identifier) => datas[id].item,
+		add_connection: (start: connector_identifier<'start'>, end: connector_identifier<'end'>) => {
+			add_connection(start, end);
+		},
+		remove_connection: (start: connector_identifier<'start'>, end: connector_identifier<'end'>) => {
+			remove_connection(start, end);
+		},
+		clear_connections: (id?: node_identifier, name?: string) => {
+			if (id === undefined) {
+				typed_keys(datas).forEach((id) => {
+					datas[id].item.node_connections = {};
+					datas[id].svg_paths = {};
+				});
+			} else if (name === undefined) {
+				datas[id].item.node_connections = {};
+				datas[id].svg_paths = {};
+			} else {
+				datas[id].item.node_connections[name] = new Set();
+				datas[id].svg_paths[name] = {};
+			}
+		}
+	};
+
 	const complete_items: Record<node_identifier, item_type> = map_values(items, (item) =>
 		cover(
 			{ component: SvelteComponent, node_connections: {}, position: { x: 0, y: 0 }, props: {} },
@@ -39,18 +69,23 @@
 	export let default_drag = true;
 	let container: HTMLElement | undefined;
 
-	function direction_to_offset(direction: vector, absolute_position: vector): vector {
+	function offset_by_direction(
+		direction: vector,
+		position: vector,
+		other_position: vector
+	): vector {
+		const offset = absolute_vector(offset_position(position, other_position));
 		return {
-			x: direction.x * 150 + absolute_position.x,
-			y: direction.y * 150 + absolute_position.y
+			x: direction.x * 10 + position.x + offset.x ** 0.9 * direction.x,
+			y: direction.y * 10 + position.y + offset.y ** 0.9 * direction.y
 		};
 	}
 
 	function calculate_connection(start: connector_refrence, end: connector_refrence): string {
 		const start_position = start.get_location();
-		const start_offset = direction_to_offset(start.get_direction(), start_position);
 		const end_position = end.get_location();
-		const end_offset = direction_to_offset(end.get_direction(), end_position);
+		const start_offset = offset_by_direction(start.get_direction(), start_position, end_position);
+		const end_offset = offset_by_direction(end.get_direction(), end_position, start_position);
 		return `M ${start_position.x} ${start_position.y} C ${start_offset.x} ${start_offset.y}, ${end_offset.x} ${end_offset.y}, ${end_position.x} ${end_position.y}`;
 	}
 
@@ -98,8 +133,8 @@
 		).filter((connection) => connection[1] !== undefined);
 
 		connections_to_update.map(([k, connector]) => {
+			datas[id].svg_paths[k] = {};
 			connector.forEach((out_identifier) => {
-				datas[id].svg_paths[k] = {};
 				update_single_connection({ id: id, name: k, type: 'start' }, out_identifier);
 			});
 		});
@@ -236,9 +271,10 @@
 				};
 			},
 			_send_value: (value: unknown, connector_identifier: connector_identifier<'end'>) => {
-				const refrence = datas[connector_identifier.id].connectors[connector_identifier.name];
-				if ('set_value' in refrence) {
-					refrence.set_value(value);
+				const connector_refrence =
+					datas[connector_identifier.id].connectors[connector_identifier.name];
+				if ('set_value' in connector_refrence) {
+					connector_refrence.set_value(value);
 				} else {
 					console.error('receiver identifier expected got normal identifier');
 				}

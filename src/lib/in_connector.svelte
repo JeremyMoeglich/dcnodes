@@ -14,7 +14,7 @@
 	export let allow_multiple_connections = false;
 	export let value: unknown;
 	export let name: string;
-	export let direction: vector;
+	export let direction: vector = { x: -1, y: 0 };
 	export let on_value_change: () => void = noop;
 	let start_connectors = new Set<connector_identifier<'start'>>();
 	let dragged_start_connector: connector_identifier<'start'> | undefined;
@@ -57,6 +57,10 @@
 		remove_previous_connection();
 		if (dragged_start_connector === undefined) {
 			throw new Error('dragged_start_connector is undefined');
+		}
+
+		if (event.clientX === 0 && event.clientY === 0) {
+			return;
 		}
 		const drag_position = offset_position(
 			{ x: event.pageX, y: event.pageY },

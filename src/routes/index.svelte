@@ -1,23 +1,14 @@
 <script lang="ts">
 	import Renderer from '$lib/renderer.svelte';
-	import DefaultNode from '$lib/default_node.svelte';
-	import type { io_type } from '$lib/default_node/pass_value';
-
-	const test_io: { inputs: io_type; outputs: io_type } = {
-		inputs: {
-			test1: { type: 'number', value: 50 },
-			x: { type: 'string', value: 'test?' }
-		},
-		outputs: {
-			out1: { type: 'number', value: 0 },
-			y: { type: 'string', value: '' }
-		}
-	};
+	import Add from '$lib/example_nodes/add.svelte';
+	import Show from '$lib/example_nodes/show.svelte';
+	import InputNode from '$lib/example_nodes/input_node.svelte';
 
 	const items = {
-		0: { component: DefaultNode, props: test_io, position: { x: 200, y: 300 } },
-		1: { component: DefaultNode, position: { x: 0, y: 400 }, props: test_io },
-		2: { component: DefaultNode, position: { x: 300, y: 200 }, props: test_io }
+		0: { component: Add, position: { x: 200, y: 300 } },
+		1: { component: InputNode, position: { x: 0, y: 400 } },
+		2: { component: InputNode, position: { x: 0, y: 400 } },
+		3: { component: Show, position: { x: 300, y: 200 } }
 	};
 </script>
 

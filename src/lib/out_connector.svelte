@@ -8,7 +8,7 @@
 	export let data: data_refrence;
 	export let value: unknown;
 	export let name: string;
-	export let direction: vector;
+	export let direction: vector = { x: 1, y: 0 };
 	let element: HTMLElement | undefined;
 
 	function remove_previous_connection() {
