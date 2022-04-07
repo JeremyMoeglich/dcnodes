@@ -13,10 +13,9 @@
 		vector,
 		node_connections
 	} from './types/item';
-	import { typed_entries, map_values, map_entries, cover, Set_delete } from 'functional-utilities';
+	import { typed_entries, map_values, map_entries, cover, Set_delete, typed_keys } from 'functional-utilities';
 	import { SvelteComponent } from 'svelte';
 	import { omit, noop } from 'lodash-es';
-	import { typed_keys } from './utilities/typed_entries';
 	import { absolute_vector, offset_position } from './utilities/rect_functions';
 
 	export let items: Record<node_identifier, Partial<item_type> & Pick<item_type, 'component'>>;

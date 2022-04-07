@@ -2,7 +2,6 @@
 	import InConnector from '../in_connector.svelte';
 	import OutConnector from '../out_connector.svelte';
 	import type { default_node_props } from './pass_value';
-	import { typed_entries } from '../utilities/typed_entries';
 	import type { data_refrence } from '../types/item';
 
 	export let inputs: default_node_props<string, string>['inputs'];
