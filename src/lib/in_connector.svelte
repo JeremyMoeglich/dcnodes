@@ -8,6 +8,7 @@
 		data_refrence,
 		item_type_refrence
 	} from './types/item';
+	import { get_position, offset_position } from './utilities/rect_functions';
 
 	export let data: data_refrence;
 	export let allow_multiple_connections = false;
@@ -21,22 +22,15 @@
 
 	let element: HTMLElement | undefined;
 
-	function get_relative_to_renderer(position: vector): vector {
-		const parent_position: vector = data.get_parent_info().position;
-		return { x: position.x - parent_position.x, y: position.y - parent_position.y };
-	}
-
-	function get_position(): vector {
-		if (element === undefined) {
-			return { x: 0, y: 0 };
-		}
-		const rect = element.getBoundingClientRect();
-		return get_relative_to_renderer(rect);
-	}
-
 	function remove_previous_connection() {
-		if (last_drag_position) {
-			data.get_current_item_refrence().remove_node_connection(name, last_drag_position);
+		if (last_drag_position && dragged_start_connector) {
+			data
+				.get_items()
+				[dragged_start_connector.id].remove_node_connection(
+					dragged_start_connector.name,
+					last_drag_position
+				);
+			last_drag_position = undefined;
 		}
 	}
 
@@ -47,12 +41,14 @@
 		dragged_start_connector = start_connectors.values().next()
 			.value as connector_identifier<'start'>;
 		start_connectors.delete(dragged_start_connector);
+		start_connectors = start_connectors;
 		data
 			.get_items()
-			[dragged_start_connector.id].get_node_connections()
-			[dragged_start_connector.name].delete(self_data);
+			[dragged_start_connector.id].remove_node_connection(dragged_start_connector.name, self_data);
 		if (event.dataTransfer) {
 			event.dataTransfer.setData('text/plain', JSON.stringify(dragged_start_connector));
+		} else {
+			throw new Error('No dataTransfer');
 		}
 		during_drag(event);
 	}
@@ -60,10 +56,15 @@
 	function during_drag(event: DragEvent) {
 		remove_previous_connection();
 		if (dragged_start_connector === undefined) {
-			return;
+			throw new Error('dragged_start_connector is undefined');
 		}
-		const drag_position = get_relative_to_renderer({ x: event.pageX, y: event.pageY });
-		data.get_current_item_refrence().add_node_connection(name, drag_position);
+		const drag_position = offset_position(
+			{ x: event.pageX, y: event.pageY },
+			data.get_parent_info().position
+		);
+		data
+			.get_items()
+			[dragged_start_connector.id].add_node_connection(dragged_start_connector.name, drag_position);
 		last_drag_position = drag_position;
 	}
 	function drop(event: DragEvent) {
@@ -80,12 +81,14 @@
 			start_connectors.add(drop_data);
 			start_connectors = start_connectors;
 		} else {
-			
+			drop_item_refrence.add_node_connection(drop_data.name, self_data);
+			start_connectors = new Set([drop_data]);
 		}
 	}
 
 	data.set_connector(name, {
-		get_location: get_position,
+		get_location: () =>
+			element ? get_position(element, data.get_parent_info().position) : { x: 0, y: 0 },
 		get_direction: () => direction,
 		set_value: (v) => {
 			value = v;
@@ -100,9 +103,7 @@
 <Interactive bind:data>
 	<div
 		class="draggable"
-		on:dragover={(event) => {
-			event.preventDefault();
-		}}
+		on:dragover|preventDefault
 		on:dragstart={(event) => {
 			take_connection(event);
 		}}

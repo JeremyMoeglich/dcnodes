@@ -3,6 +3,7 @@
 
 	import Interactive from './interactive.svelte';
 	import type { vector, connector_identifier, data_refrence } from './types/item';
+	import { get_position, offset_position } from './utilities/rect_functions';
 
 	export let data: data_refrence;
 	export let value: unknown;
@@ -10,27 +11,23 @@
 	export let direction: vector;
 	let element: HTMLElement | undefined;
 
-	function get_relative_to_renderer(position: vector): vector {
-		const parent_position: vector = data.get_parent_info().position;
-		return { x: position.x - parent_position.x, y: position.y - parent_position.y };
-	}
-
 	function remove_previous_connection() {
 		if (last_drag_position) {
 			data.get_current_item_refrence().remove_node_connection(name, last_drag_position);
+			last_drag_position = undefined;
 		}
 	}
 
-	function get_position(): vector {
-		if (element === undefined) {
-			return { x: 0, y: 0 };
-		}
-		const rect = element.getBoundingClientRect();
-		return get_relative_to_renderer(rect);
-	}
 	function during_drag(event: DragEvent) {
 		remove_previous_connection();
-		const drag_position = get_relative_to_renderer({ x: event.pageX, y: event.pageY });
+		const drag_position = offset_position(
+			{ x: event.pageX, y: event.pageY },
+			data.get_parent_info().position
+		);
+		if (event.clientX === 0 && event.clientY === 0) {
+			return;
+		}
+
 		data.get_current_item_refrence().add_node_connection(name, drag_position);
 		last_drag_position = drag_position;
 	}
@@ -41,9 +38,13 @@
 		}
 	}
 
-	data.set_connector(name, { get_location: get_position, get_direction: () => direction });
+	data.set_connector(name, {
+		get_location: () =>
+			element ? get_position(element, data.get_parent_info().position) : { x: 0, y: 0 },
+		get_direction: () => direction
+	});
 	let self_data: connector_identifier;
-	let last_drag_position: vector;
+	let last_drag_position: vector | undefined;
 	$: self_data = { id: data.id, name: name, type: 'start' };
 
 	function send_value(value: unknown) {

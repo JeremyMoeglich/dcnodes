@@ -13,7 +13,7 @@
 		vector,
 		node_connections
 	} from './types/item';
-	import { typed_entries, map_values, map_entries, cover } from 'functional-utilities';
+	import { typed_entries, map_values, map_entries, cover, Set_delete } from 'functional-utilities';
 	import { SvelteComponent } from 'svelte';
 	import { omit, noop } from 'lodash-es';
 
@@ -75,7 +75,6 @@
 
 	function backwards_update(id: node_identifier, name?: string) {
 		const connections = back_connections?.[id] ?? {};
-		console.log(`connections: ${JSON.stringify(back_connections)}`)
 		const connections_to_update = (
 			name
 				? [[name, connections[name]] as [string, Set<connector_identifier<'start'>>]]
@@ -98,10 +97,9 @@
 				: typed_entries(connections)
 		).filter((connection) => connection[1] !== undefined);
 
-		datas[id].svg_paths = {};
 		connections_to_update.map(([k, connector]) => {
 			connector.forEach((out_identifier) => {
-				datas[id].svg_paths[k] ??= {};
+				datas[id].svg_paths[k] = {};
 				update_single_connection({ id: id, name: k, type: 'start' }, out_identifier);
 			});
 		});
@@ -140,9 +138,13 @@
 		out_node: connector_identifier<'end'> | vector
 	): void {
 		if ('name' in out_node) {
-			back_connections[out_node.id][out_node.name].delete(in_node);
+			if (!Set_delete(back_connections[out_node.id][out_node.name], in_node)) {
+				throw new Error('Cannot remove non existing connection');
+			}
 		}
-		datas[in_node.id].item.node_connections[in_node.name].delete(out_node);
+		if (!Set_delete(datas[in_node.id].item.node_connections[in_node.name], out_node)) {
+			throw new Error('Cannot remove non existing connection');
+		}
 		update_connection(in_node.id, in_node.name, 'start');
 	}
 
@@ -163,6 +165,16 @@
 			},
 			set_node_connections: (connections: node_connections) => {
 				data.item.node_connections = connections;
+				back_connections = {};
+				typed_entries(connections).forEach(([k, v]) => {
+					v.forEach((out_node) => {
+						if ('name' in out_node) {
+							back_connections[out_node.id] ??= {};
+							back_connections[out_node.id][out_node.name] ??= new Set();
+							back_connections[out_node.id][out_node.name].add({ id: i, name: k, type: 'start' });
+						}
+					});
+				});
 				update_connection(i, undefined, 'start');
 			},
 			add_node_connection: (name: string, to: connector_identifier<'end'> | vector) => {
